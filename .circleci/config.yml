@@ -24,11 +24,6 @@ jobs:
           name: Navegar para o diretório do projeto
           command: cd .circleci/project
 
-      # Etapa para criar o package-lock.json se não existir
-      - run:
-          name: Garantir que package-lock.json exista
-          command: npm i --package-lock-only
-
       # Etapa para instalar dependências do projeto
       - run:
           name: Instalar dependências do projeto
