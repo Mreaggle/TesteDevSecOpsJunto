@@ -1,38 +1,49 @@
 version: 2.1
 
 jobs:
-  checkout:
+  build:
     docker:
-      - image: circleci/node:14
+      - image: circleci/node:latest
+
     steps:
       - checkout
 
-  test:
-    docker:
-      - image: circleci/node:14
-    steps:
-      - checkout
+      # Step para executar os testes
       - run:
-          name: Fake test
-          command: echo "Fake test"
+          name: Fake Test
+          command: |
+            echo "Fake test"  # Nome do teste exemplo
 
-  appsec:
-    docker:
-      - image: circleci/node:14
-    steps:
-      - checkout
+      # Step para escanear a aplicação
       - run:
-          name: scan-app
-          command: echo "Executando teste de segurança na aplicação ./app2"
-      - run:
-          name: scan-docker
-          command: echo "Executando teste de segurança no Dockerfile/Imagem criado para o ./app1"
+          name: AppSec - scan-app
+          command: |
+            # Comandos para escanear a aplicação, por exemplo:
+            # docker run --rm -v $(pwd)/app2:/src securecodebox/engine-sast-npm
 
-  deploy:
-    docker:
-      - image: circleci/node:14
-    steps:
-      - checkout
+      # Step para escanear o Dockerfile e a imagem Docker
       - run:
-          name: Deploy para AWS
-          command: echo "Implementando a aplicação via pipeline no AWS (EC2, ECS, Fargate, Beanstalk, etc)"
+          name: AppSec - scan-docker
+          command: |
+            # Comandos para escanear o Dockerfile/imagem Docker, por exemplo:
+            # docker run --rm -v $(pwd)/app1:/src securecodebox/engine-sast-docker
+
+            # Step para deploy da aplicação
+      - run:
+          name: Deploy to AWS
+          command: |
+            aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
+            aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+            aws configure set default.region $AWS_DEFAULT_REGION
+            # Comandos para fazer o deploy, por exemplo:
+            aws ecs update-service --cluster my-cluster --service my-service --force-new-deployment
+          environment:
+            AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
+            AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
+            AWS_DEFAULT_REGION: $AWS_DEFAULT_REGION
+
+workflows:
+  version: 2
+  build-and-deploy:
+    jobs:
+      - build
