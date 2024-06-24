@@ -1,111 +1,104 @@
-version: 2.1
+version: 2.1 # Versão do CircleCI
 
 jobs:
-  build:
+  checkout:
     docker:
-      - image: circleci/node:14
+      - image: circleci/node:18.12.0 # Imagem Node.js 18.12.0 no CircleCI para consistência com o Dockerfile
+    steps:
+      - checkout # Faz o checkout do código-fonte do repositório
+
+  test-app1:
+    docker:
+      - image: circleci/node:18.12.0
     steps:
       - checkout
-
-      # Certifique-se de que estamos no diretório correto
       - run:
-          name: Navegar para o diretório do projeto
-          command: cd .circleci/project
+          name: Executar testes (app1)
+          command: cd app1 && npm test # Executa os testes unitários da aplicação app1
 
-      # Etapa para instalar dependências do projeto
+  scan-app-app2: # Job para análise estática de segurança da aplicação app2
+    docker:
+      - image: circleci/node:18.12.0
+    steps:
+      - checkout
       - run:
-          name: Instalar dependências do projeto
+          name: Instalar ESLint (app2)
+          command: cd app2 && npm install eslint@^7 --save-dev # Instala ESLint como dependência de desenvolvimento
+      - run:
+          name: Executar ESLint (app2)
+          command: cd app2 && ./node_modules/.bin/eslint src/** # Executa a análise de código com ESLint
+      - run:
+          name: Instalar SonarQube Scanner
           command: |
-            sudo apt-get upgrade docker-ce
-            curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
-            nvm install --lts
-            sudo npm install -g standard --save-dev --force
-            npm install --legacy-peer-deps
-            npm install -g npm@latest
-            npm update
-
-            
-            
-      # Tratar os WARNs do npm
+            wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.7.0.2747-linux.zip
+            unzip sonar-scanner-cli-4.7.0.2747-linux.zip
+            sudo mv sonar-scanner-4.7.0.2747-linux /opt/sonar-scanner
+            sudo ln -s /opt/sonar-scanner/bin/sonar-scanner /usr/local/bin/sonar-scanner
       - run:
-          name: Tratar WARNs do npm
+          name: Executar SonarQube Scanner (app2)
           command: |
-            npm install --save lru-cache
-            npm install --save @eslint/object-schema
-            npm install --save @eslint/config-array
-            npm install --save inflight@latest
-            npm install --save glob@latest
-            npm install  --save rimraf@latest
-
-      # Etapa para executar os testes
+            cd app2
+            sonar-scanner -Dsonar.projectKey=app2 \ # Define o nome do projeto no SonarQube
+              -Dsonar.organization=sua_organizacao \ # Define a organização no SonarQube
+              -Dsonar.host.url=https://sonarcloud.io \ # URL do servidor SonarQube
+              -Dsonar.login=$SONAR_TOKEN # Token de autenticação do SonarQube
       - run:
-          name: Teste Fake
-          command: echo "Teste Fake"  # Nome solicitado no exemplo
-
-      # Etapa para escanear a aplicação com npm audit
+          name: Instalar Snyk
+          command: npm install -g snyk # Instala Snyk globalmente
       - run:
-          name: AppSec - npm audit
-          command: npm audit
+          name: Executar Snyk (app2)
+          command: cd app2 && snyk test --severity-threshold=high # Executa a análise de vulnerabilidades com Snyk
 
-      # Executar o StandardJS no diretório do seu projeto
+  scan-docker-app1: # Job para análise de segurança da imagem Docker da app1
+    docker:
+      - image: circleci/node:18.12.0
+    steps:
+      - checkout
+      - setup_remote_docker # Configura um ambiente Docker remoto
       - run:
-          name: AppSec - StandardJS
+          name: Construir imagem Docker (app1)
+          command: docker build -t app1 . # Constrói a imagem Docker com a tag 'app1'
+      - run:
+          name: Executar Trivy (app1)
+          command: docker run --rm aquasec/trivy:latest image app1 # Executa Trivy para analisar a imagem 'app1'
+      - run:
+          name: Executar Clair (app1) # Utiliza Clair para uma segunda validação da imagem, complementando o Trivy
           command: |
-            npm install standard --save-dev
-            npx standard
-            standard
+            docker pull arminc/clair-scanner:latest
+            docker run -d -p 5432:5432 -e POSTGRES_PASSWORD=password --name db postgres:latest
+            docker run --rm -it --link db:postgres -v $PWD:/tmp/src arminc/clair-scanner:latest clair-db:postgres clair:http://clair:6060 /tmp/src app1
 
-      # Etapa para escanear a aplicação com JSLint
+  deploy-app1: # Job para deploy da aplicação app1 no AWS ECS
+    docker:
+      - image: circleci/amazon-linux-2:2018.03 # Imagem compatível com AWS CLI
+    steps:
+      - checkout
       - run:
-          name: AppSec - JSLint
+          name: Configurar AWS CLI
           command: |
-            npm install -g jslint
-            jslint .
-
-      # Etapa para escanear a aplicação com ESLint
-      #- run:
-      #    name: AppSec - ESLint
-      #    command: |
-      #      npm install @eslint/create-config
-      #      npx eslint .
-
-      # Etapa para verificar dependências com Retire.js
+            aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID # Define a chave de acesso da AWS
+            aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY # Define a chave secreta da AWS
+            aws configure set default.region $AWS_DEFAULT_REGION # Define a região padrão da AWS
       - run:
-          name: AppSec - Retire.js
-          command: |
-            npm install -g retire
-            retire
+          name: Deploy da aplicação app1
+          command: aws ecs update-service --cluster TesteDevSecOpsJunto --service testedevsecops --force-new-deployment # Atualiza o serviço no ECS forçando um novo deploy
 
-      # Etapa para escanear o Dockerfile e a imagem Docker com Clair
-      - run:
-          name: AppSec - Clair
-          command: |
-            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock quay.io/coreos/clairctl:latest clairctl analyze -l Dockerfile
-
-      # Etapa para escanear o Dockerfile e a imagem Docker com Trivy
-      - run:
-          name: AppSec - Trivy
-          command: |
-            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest --ignore-unfixed .
-
-      # Etapa para fazer deploy da aplicação
-      - run:
-          name: Deploy para AWS ECS
-          command: |
-            aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
-            aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
-            aws configure set default.region $AWS_DEFAULT_REGION
-
-            # Atualizar o serviço ECS
-            aws ecs update-service --cluster TesteDevSecOpsJunto --service testedevsecops --force-new-deployment
-
-    environment:
-      AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
-      AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
-      AWS_DEFAULT_REGION: $AWS_DEFAULT_REGION
-
+# Define o workflow para executar os jobs sequencialmente
 workflows:
-  version: 2
-  build-and-deploy:
+  build_and_deploy:
     jobs:
-      - build
+      - checkout
+      - test-app1:
+          requires:
+            - checkout
+      - scan-app-app2:
+          requires:
+            - checkout
+      - scan-docker-app1:
+          requires:
+            - checkout
+      - deploy-app1:
+          requires:
+            - test-app1
+            - scan-app-app2
+            - scan-docker-app1
