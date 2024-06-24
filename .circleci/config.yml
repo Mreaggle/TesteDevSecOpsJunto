@@ -58,7 +58,7 @@ jobs:
       # Executar o StandardJS no diretório do seu projeto
       - run:
           name: AppSec - StandardJS
-           command: |
+          command: |
             npm install standard --save-dev
             npx standard
 
