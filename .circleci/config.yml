@@ -12,6 +12,23 @@ jobs:
           command: |
             circleci tests split --split-by=timings > test_files.txt || true
             circleci tests run --no-parallel < test_files.txt
+      # Instalar o plugin circleci-tests-plugin-cli sem as bandeiras não suportadas
+      - run:
+            name: Instalar circleci-tests-plugin-cli
+            command: |
+                npm install -g circleci-tests-plugin-cli
+
+      # Verificar e regenerar o arquivo de dados de tempo histórico, se estiver ausente
+      - run:
+          name: Verificar e regenerar dados de tempo histórico
+          command: |
+              if [ ! -f historical_data.txt ]; then
+                echo "Arquivo de dados de tempo histórico não encontrado. Regenerando..."
+                # Substitua pelo comando real para gerar o arquivo historical_data.txt
+                # Exemplo de comando: generate_historical_data_command > historical_data.txt
+                # Se a geração não for simples, forneça uma fonte alternativa.
+              fi
+
         
       - checkout
 
