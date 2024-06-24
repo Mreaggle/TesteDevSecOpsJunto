@@ -42,8 +42,9 @@ jobs:
       # Etapa para instalar dependências do projeto
       - run:
           name: Instalar dependências do projeto
-          command: npm install
-
+          command: |
+            npm install
+            apt-get install some_dependency
       # Tratar os WARNs do npm
       - run:
           name: Tratar WARNs do npm
