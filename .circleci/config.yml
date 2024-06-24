@@ -16,10 +16,8 @@ jobs:
       - run:
           name: Instalar dependências do projeto
           command: |
-            lsb_release -a
             sudo apt update --force
             sudo apt upgrade docker-ce --force
-            lsb_release -a
             sudo systemctl restart docker
             curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
             nvm install --lts
