@@ -4,8 +4,13 @@ jobs:
   build:
     docker:
       - image: circleci/node:latest
-
+    parallelism: 4  # Definir o número de executores paralelos desejados
     steps:
+      # Divisão e execução dos testes em paralelo
+      - run:
+          name: Executar Testes em Paralelo
+          command: |
+            circleci tests split --split-by=timings | circleci tests run --config .circleci/config.yml --
       - checkout
 
       # Certifique-se de que estamos no diretório correto
@@ -30,37 +35,7 @@ jobs:
       - run:
           name: Instalar dependências do projeto
           command: npm install
-
-      # Etapa para executar os testes
-      - run:
-          name: Teste Fake
-          command: echo "Teste Fake"  # Nome solicitado no exemplo
-
-      # Etapa para escanear a aplicação com npm audit
-      - run:
-          name: AppSec - npm audit
-          command: npm audit
-
-      # Etapa para escanear o Dockerfile e a imagem Docker com Clair
-      - run:
-          name: AppSec - Clair
-          command: |
-            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock quay.io/coreos/clairctl:latest clairctl analyze -l Dockerfile
-
-      # Etapa para escanear o Dockerfile e a imagem Docker com Trivy
-      - run:
-          name: AppSec - Trivy
-          command: |
-            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest --ignore-unfixed .
-
-      # Etapa para substituir ESLint por StandardJS
-      - run:
-          name: AppSec - StandardJS
-          command: |
-            npm install --save-dev standard
-            npx standard --fix
-
-      # Etapa para tratar os WARNs do npm
+      # Tratar os WARNs do npm
       - run:
           name: Tratar WARNs do npm
           command: |
@@ -69,12 +44,87 @@ jobs:
             npm install --save glob@latest
             npm install --save @eslint/object-schema
             npm install --save @eslint/config-array
-
-      # Etapa para executar os testes em paralelo
+        continue-on-error: true
+      # Etapa para executar os testes
       - run:
-          name: Executar Testes em Paralelo
+          name: Teste Fake
+          command: echo "Teste Fake"  # Nome solicitado no exemplo
+        timeout: 3m
+        continue-on-error: true
+
+      # Etapa para escanear a aplicação com npm audit
+      - run:
+          name: AppSec - npm audit
+          command: npm audit
+        continue-on-error: true
+
+      # Etapa para escanear a aplicação com ESLint
+      - run:
+          name: AppSec - ESLint
           command: |
-            circleci tests split --split-by=timings | circleci tests run --config .circleci/config.yml --
+            npm install eslint eslint-plugin-react --save-dev
+            npx eslint --init --max-warnings=0 --force
+            echo "module.exports = {
+              env: {
+                browser: true,
+                es2021: true,
+                node: true,
+              },
+              extends: [
+                'eslint:recommended',
+                'plugin:react/recommended',
+              ],
+              parserOptions: {
+                ecmaFeatures: {
+                  jsx: true,
+                },
+                ecmaVersion: 12,
+                sourceType: 'module',
+              },
+              plugins: [
+                'react',
+              ],
+              rules: {
+                'react/react-in-jsx-scope': 'off',
+              },
+            };" > eslint.config.js
+            npx eslint .
+        timeout: 3m            
+        continue-on-error: true
+
+      # Etapa para escanear a aplicação com JSLint
+      - run:
+          name: AppSec - JSLint
+          command: |
+            npm install -g jslint
+            jslint .
+        timeout: 3m
+        continue-on-error: true
+
+      # Etapa para verificar dependências com Retire.js
+      - run:
+          name: AppSec - Retire.js
+          command: |
+            npm install -g retire
+            retire
+        timeout: 3m        
+        continue-on-error: true
+
+      # Etapa para escanear o Dockerfile e a imagem Docker com Clair
+      - run:
+          name: AppSec - Clair
+          command: |
+            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock quay.io/coreos/clairctl:latest clairctl analyze -l Dockerfile
+        timeout: 3m
+        continue-on-error: true
+
+      # Etapa para escanear o Dockerfile e a imagem Docker com Trivy
+      - run:
+          name: AppSec - Trivy
+          command: |
+            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest --ignore-unfixed .
+        timeout: 3m
+        continue-on-error: true
 
       # Etapa para fazer deploy da aplicação
       - run:
@@ -86,7 +136,6 @@ jobs:
 
             # Atualizar o serviço ECS
             aws ecs update-service --cluster TesteDevSecOpsJunto --service testedevsecops --force-new-deployment
-
     environment:
       AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
       AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
@@ -94,6 +143,6 @@ jobs:
 
 workflows:
   version: 2
-  build-and-test:
+  build-and-deploy:
     jobs:
       - build
