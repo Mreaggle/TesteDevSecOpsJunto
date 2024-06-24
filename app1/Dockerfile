@@ -7,11 +7,11 @@ WORKDIR /app
 # Copia os arquivos package*.json primeiro para aproveitar o cache de camadas do Docker.
 COPY package*.json ./
 
-# Instala as dependências da aplicação.
-RUN npm ci
-
 # Copia o restante do código da aplicação para o container.
 COPY . ./
+
+# Instala as dependências da aplicação.
+RUN npm ci
 
 # Expõe a porta 3000 onde a aplicação estará ouvindo.
 EXPOSE 3000
