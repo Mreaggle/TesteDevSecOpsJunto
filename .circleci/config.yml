@@ -16,10 +16,10 @@ jobs:
       - run:
           name: Instalar dependências do projeto
           command: |
-            npm install
             npm update
-            npm install -g standard --force
+            npm install -g standard --save-dev --force
             npm install --legacy-peer-deps
+            
             
       # Tratar os WARNs do npm
       - run:
@@ -30,6 +30,8 @@ jobs:
             npm install --save glob@latest
             npm install --save @eslint/object-schema
             npm install --save @eslint/config-array
+            npm install inflight@latest
+            npm install glob@
 
       # Etapa para executar os testes
       - run:
