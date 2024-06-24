@@ -28,19 +28,20 @@ jobs:
             # Comandos para escanear o Dockerfile/imagem Docker, por exemplo:
             # docker run --rm -v $(pwd)/app1:/src securecodebox/engine-sast-docker
 
-            # Step para deploy da aplicação
+      # Step para deploy da aplicação
       - run:
-          name: Deploy to AWS
+          name: Deploy to AWS ECS
           command: |
             aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
             aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
             aws configure set default.region $AWS_DEFAULT_REGION
-            # Comandos para fazer o deploy, por exemplo:
-            aws ecs update-service --cluster my-cluster --service my-service --force-new-deployment
-          environment:
-            AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
-            AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
-            AWS_DEFAULT_REGION: $AWS_DEFAULT_REGION
+
+            # Passa o Cluster e o Serviço criados no ECS
+            aws ecs update-service --cluster TesteDevSecOpsJunto --service testdevsecops --force-new-deployment
+      environment:
+        AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
+        AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
+        AWS_DEFAULT_REGION: $AWS_DEFAULT_REGION
 
 workflows:
   version: 2
