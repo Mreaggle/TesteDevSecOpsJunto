@@ -103,6 +103,16 @@ jobs:
             # Atualizar o serviço ECS
             aws ecs update-service --cluster TesteDevSecOpsJunto --service testedevsecops --force-new-deployment
 
+      # Etapa para commitar as alterações no arquivo .circleci/config.yml
+      - run:
+          name: Commit Changes
+          command: |
+            git config --global user.email "kauancdias@outlook.com"
+            git config --global user.name "Mreaggle"
+            git add .circleci/config.yml
+            git commit -m "Atualização do arquivo .circleci/config.yml"
+            git push origin HEAD
+
     environment:
       AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
       AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
