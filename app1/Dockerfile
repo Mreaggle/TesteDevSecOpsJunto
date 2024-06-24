@@ -11,7 +11,7 @@ COPY app1/package*.json ./
 RUN npm ci
 
 # Copia o restante do código da aplicação para o container.
-COPY app1/ ./
+COPY . ./
 
 # Expõe a porta 3000 onde a aplicação estará ouvindo.
 EXPOSE 3000
