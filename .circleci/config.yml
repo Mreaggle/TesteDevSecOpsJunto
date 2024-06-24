@@ -61,8 +61,7 @@ jobs:
           command: |
             npm install standard --save-dev
             npx standard
-
-        standard
+            standard
 
       # Etapa para escanear a aplicação com ESLint
       - run:
