@@ -6,7 +6,7 @@ jobs:
       - image: circleci/node:latest
     steps:
     
-      - checkout
+     - checkout
 
       # Certifique-se de que estamos no diretório correto
       - run:
