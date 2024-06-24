@@ -5,7 +5,7 @@ FROM node:18.12.0-alpine
 WORKDIR /app
 
 # Copia os arquivos package*.json primeiro para aproveitar o cache de camadas do Docker.
-COPY app1/package*.json ./
+COPY package*.json ./
 
 # Instala as dependências da aplicação.
 RUN npm ci
