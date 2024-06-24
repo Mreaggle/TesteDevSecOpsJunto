@@ -1,11 +1,38 @@
 version: 2.1
 
 jobs:
-  build:
+  checkout:
     docker:
-      - image: circleci/node:14  # Escolha uma imagem adequada para NodeJS
+      - image: circleci/node:14
+    steps:
+      - checkout
+
+  test:
+    docker:
+      - image: circleci/node:14
     steps:
       - checkout
       - run:
           name: Fake test
           command: echo "Fake test"
+
+  appsec:
+    docker:
+      - image: circleci/node:14
+    steps:
+      - checkout
+      - run:
+          name: scan-app
+          command: echo "Executando teste de segurança na aplicação ./app2"
+      - run:
+          name: scan-docker
+          command: echo "Executando teste de segurança no Dockerfile/Imagem criado para o ./app1"
+
+  deploy:
+    docker:
+      - image: circleci/node:14
+    steps:
+      - checkout
+      - run:
+          name: Deploy para AWS
+          command: echo "Implementando a aplicação via pipeline no AWS (EC2, ECS, Fargate, Beanstalk, etc)"
