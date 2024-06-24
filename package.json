@@ -10,6 +10,16 @@
   "author": "Sam Clement",
   "license": "ISC",
   "devDependencies": {
+    "@eslint/compat": "^1.1.0",
+    "@eslint/js": "^9.5.0",
+    "eslint": "^9.5.0",
+    "eslint-plugin-react": "^7.34.3",
+    "glob": "^10.4.2",
+    "globals": "^15.6.0",
+    "inflight": "^1.0.6",
     "tape": "^4.6.3"
+  },
+  "dependencies": {
+    "node": "^20.15.0"
   }
 }
