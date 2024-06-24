@@ -3,7 +3,7 @@ version: 2.1
 jobs:
   build:
     docker:
-      - image: circleci/node:latest
+      - image: circleci/node:14.17.0
     steps:
       - checkout
 
@@ -16,9 +16,12 @@ jobs:
       - run:
           name: Instalar dependências do projeto
           command: |
-            npm update
+            nvm install --lts
             sudo npm install -g standard --save-dev --force
             npm install --legacy-peer-deps
+            npm install -g npm@latest
+            npm update
+
             
             
       # Tratar os WARNs do npm
@@ -26,12 +29,11 @@ jobs:
           name: Tratar WARNs do npm
           command: |
             npm install --save lru-cache
-            npm install --save rimraf@latest
-            npm install --save glob@latest
             npm install --save @eslint/object-schema
             npm install --save @eslint/config-array
-            npm install inflight@latest
-            npm install glob@
+            npm install --save inflight@latest
+            npm install --save glob@latest
+            npm install  --save rimraf@latest
 
       # Etapa para executar os testes
       - run:
