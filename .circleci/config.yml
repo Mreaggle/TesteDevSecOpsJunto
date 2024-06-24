@@ -3,13 +3,13 @@ version: 2.1 # Versão do CircleCI
 jobs:
   checkout:
     docker:
-      - image: circleci/node:18.12.0 # Imagem Node.js 18.12.0 no CircleCI para consistência com o Dockerfile
+      - image: circleci/node:18 # Imagem Node.js 18.12.0 no CircleCI para consistência com o Dockerfile
     steps:
       - checkout # Faz o checkout do código-fonte do repositório
 
   test-app1:
     docker:
-      - image: circleci/node:18.12.0
+      - image: circleci/node:18
     steps:
       - checkout
       - run:
@@ -18,7 +18,7 @@ jobs:
 
   scan-app-app2: # Job para análise estática de segurança da aplicação app2
     docker:
-      - image: circleci/node:18.12.0
+      - image: circleci/node:18
     steps:
       - checkout
       - run:
@@ -51,7 +51,7 @@ jobs:
 
   scan-docker-app1: # Job para análise de segurança da imagem Docker da app1
     docker:
-      - image: circleci/node:18.12.0
+      - image: circleci/node:18
     steps:
       - checkout
       - setup_remote_docker # Configura um ambiente Docker remoto
