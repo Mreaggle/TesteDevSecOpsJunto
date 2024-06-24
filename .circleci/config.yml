@@ -16,9 +16,6 @@ jobs:
       - run:
           name: Instalar dependências do projeto
           command: |
-            sudo apt-get install debian-archive-keyring
-            sudo deb http://deb.debian.org/debian buster main
-            sudo deb http://security.debian.org/debian-security buster/updates main
             sudo apt update
             sudo apt upgrade docker-ce
             sudo systemctl restart docker
