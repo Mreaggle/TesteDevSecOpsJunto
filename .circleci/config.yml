@@ -29,6 +29,13 @@ jobs:
             cd .circleci/project
             npm i --package-lock-only
 
+      # Etapa para instalar dependências do projeto
+      - run:
+          name: Instalar dependências do projeto
+          command: |
+            cd .circleci/project
+            npm install
+
       # Etapa para executar os testes
       - run:
           name: Teste Fake
@@ -43,13 +50,13 @@ jobs:
             cd .circleci/project
             npm audit
 
-      # Etapa para escanear a aplicação com Nodejsscan
+      # Etapa para escanear a aplicação com ESLint
       - run:
-          name: AppSec - Nodejsscan
+          name: AppSec - ESLint
           command: |
             cd .circleci/project
-            npm install -g nodejsscan
-            nodejsscan
+            npm install eslint --save-dev
+            npx eslint .
 
       # Etapa para verificar dependências com Retire.js
       - run:
