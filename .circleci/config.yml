@@ -22,6 +22,13 @@ jobs:
               npm init -y
             fi
 
+      # Etapa para criar o package-lock.json se não existir
+      - run:
+          name: Garantir que package-lock.json exista
+          command: |
+            cd .circleci/project
+            npm i --package-lock-only
+
       # Etapa para executar os testes
       - run:
           name: Teste Fake
