@@ -55,7 +55,32 @@ jobs:
           name: AppSec - ESLint
           command: |
             cd .circleci/project
-            npm install eslint --save-dev
+            npm install eslint eslint-plugin-react --save-dev
+            npx eslint --init
+            echo "module.exports = {
+              env: {
+                browser: true,
+                es2021: true,
+                node: true,
+              },
+              extends: [
+                'eslint:recommended',
+                'plugin:react/recommended',
+              ],
+              parserOptions: {
+                ecmaFeatures: {
+                  jsx: true,
+                },
+                ecmaVersion: 12,
+                sourceType: 'module',
+              },
+              plugins: [
+                'react',
+              ],
+              rules: {
+                'react/react-in-jsx-scope': 'off',
+              },
+            };" > eslint.config.js
             npx eslint .
 
       # Etapa para verificar dependências com Retire.js
