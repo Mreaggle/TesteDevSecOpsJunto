@@ -8,57 +8,79 @@ jobs:
     steps:
       - checkout
 
-      # Step para executar os testes
+      # Certifique-se de que estamos no diretório correto
       - run:
-          name: Fake Test
-          command: |
-            echo "Fake test"  # Nome solicitado no exemplo
+          name: Navegar para o diretório do projeto
+          command: cd .circleci/project
 
-      # Step para escanear a aplicação com npm audit
+      # Etapa para criar package.json se não existir
+      - run:
+          name: Garantir que package.json exista
+          command: |
+            cd .circleci/project
+            if [ ! -f package.json ]; then
+              npm init -y
+            fi
+
+      # Etapa para executar os testes
+      - run:
+          name: Teste Fake
+          command: |
+            cd .circleci/project
+            echo "Teste Fake"  # Nome solicitado no exemplo
+
+      # Etapa para escanear a aplicação com npm audit
       - run:
           name: AppSec - npm audit
           command: |
-            npm i --package-lock-only
+            cd .circleci/project
             npm audit
 
-      # Step para escanear a aplicação com Nodejsscan
+      # Etapa para escanear a aplicação com Nodejsscan
       - run:
           name: AppSec - Nodejsscan
           command: |
+            cd .circleci/project
             npm install -g nodejsscan
             nodejsscan
 
-      # Step para verificar dependências com Retire.js
+      # Etapa para verificar dependências com Retire.js
       - run:
           name: AppSec - Retire.js
-          command: retire
+          command: |
+            cd .circleci/project
+            npm install -g retire
+            retire
 
-      # Step para escanear o Dockerfile e a imagem Docker com Clair
+      # Etapa para escanear o Dockerfile e a imagem Docker com Clair
       - run:
           name: AppSec - Clair
           command: |
-            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock quay.io/coreos/clairctl:latest clairctl analyze -l $(pwd)/app1/Dockerfile
+            cd .circleci/project
+            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock quay.io/coreos/clairctl:latest clairctl analyze -l Dockerfile
 
-      # Step para escanear o Dockerfile e a imagem Docker com Trivy
+      # Etapa para escanear o Dockerfile e a imagem Docker com Trivy
       - run:
           name: AppSec - Trivy
           command: |
-            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest --ignore-unfixed $(pwd)/app1
+            cd .circleci/project
+            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest --ignore-unfixed .
 
-      # Step para deploy da aplicação
+      # Etapa para fazer deploy da aplicação
       - run:
-          name: Deploy to AWS ECS
+          name: Deploy para AWS ECS
           command: |
             aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
             aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
             aws configure set default.region $AWS_DEFAULT_REGION
 
-            # Passa o Cluster e o Serviço criados no ECS
+            # Atualizar o serviço ECS
             aws ecs update-service --cluster TesteDevSecOpsJunto --service testedevsecops --force-new-deployment
+
     environment:
-        AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
-        AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
-        AWS_DEFAULT_REGION: $AWS_DEFAULT_REGION
+      AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
+      AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
+      AWS_DEFAULT_REGION: $AWS_DEFAULT_REGION
 
 workflows:
   version: 2
