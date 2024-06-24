@@ -5,18 +5,7 @@ jobs:
     docker:
       - image: circleci/node:latest
     steps:
-      # Verificar e regenerar o arquivo de dados de tempo histórico, se estiver ausente
-      - run:
-          name: Verificar e regenerar dados de tempo histórico
-          command: |
-              if [ ! -f historical_data.txt ]; then
-                echo "Arquivo de dados de tempo histórico não encontrado. Regenerando..."
-                # Substitua pelo comando real para gerar o arquivo historical_data.txt
-                # Exemplo de comando: generate_historical_data_command > historical_data.txt
-                # Se a geração não for simples, forneça uma fonte alternativa.
-              fi
-
-        
+    
       - checkout
 
       # Certifique-se de que estamos no diretório correto
