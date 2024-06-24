@@ -17,7 +17,6 @@ jobs:
       - run:
           name: Garantir que package.json exista
           command: |
-            cd .circleci/project
             if [ ! -f package.json ]; then
               npm init -y
             fi
@@ -25,38 +24,29 @@ jobs:
       # Etapa para criar o package-lock.json se não existir
       - run:
           name: Garantir que package-lock.json exista
-          command: |
-            cd .circleci/project
-            npm i --package-lock-only
+          command: npm i --package-lock-only
 
       # Etapa para instalar dependências do projeto
       - run:
           name: Instalar dependências do projeto
-          command: |
-            cd .circleci/project
-            npm install
+          command: npm install
 
       # Etapa para executar os testes
       - run:
           name: Teste Fake
-          command: |
-            cd .circleci/project
-            echo "Teste Fake"  # Nome solicitado no exemplo
+          command: echo "Teste Fake"  # Nome solicitado no exemplo
 
       # Etapa para escanear a aplicação com npm audit
       - run:
           name: AppSec - npm audit
-          command: |
-            cd .circleci/project
-            npm audit
+          command: npm audit
 
       # Etapa para escanear a aplicação com ESLint
       - run:
           name: AppSec - ESLint
           command: |
-            cd .circleci/project
             npm install eslint eslint-plugin-react --save-dev
-            npx eslint --init
+            npx eslint --init --max-warnings=0 --force
             echo "module.exports = {
               env: {
                 browser: true,
@@ -87,7 +77,6 @@ jobs:
       - run:
           name: AppSec - Retire.js
           command: |
-            cd .circleci/project
             npm install -g retire
             retire
 
@@ -95,14 +84,12 @@ jobs:
       - run:
           name: AppSec - Clair
           command: |
-            cd .circleci/project
             docker run --rm -v /var/run/docker.sock:/var/run/docker.sock quay.io/coreos/clairctl:latest clairctl analyze -l Dockerfile
 
       # Etapa para escanear o Dockerfile e a imagem Docker com Trivy
       - run:
           name: AppSec - Trivy
           command: |
-            cd .circleci/project
             docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest --ignore-unfixed .
 
       # Etapa para fazer deploy da aplicação
