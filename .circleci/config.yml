@@ -7,11 +7,13 @@ jobs:
     parallelism: 4  # Definir o número de executores paralelos desejados
     steps:
       # Divisão e execução dos testes em paralelo
-      - run:
-          name: Executar Testes em Paralelo
-          command: |
-            circleci tests split --split-by=timings | circleci tests run --config .circleci/config.yml --
-      - checkout
+        - run:
+            name: Executar Testes em Paralelo
+            command: |
+            circleci tests split --split-by=timings > test_files.txt
+            circleci tests run --no-parallel < test_files.txt
+        
+        - checkout
 
       # Certifique-se de que estamos no diretório correto
       - run:
