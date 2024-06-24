@@ -29,7 +29,6 @@ jobs:
           name: Instalar dependências do projeto
           command: |
             npm install
-            apt-get install some_dependency
             
       # Tratar os WARNs do npm
       - run:
