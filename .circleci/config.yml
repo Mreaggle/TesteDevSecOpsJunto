@@ -30,7 +30,7 @@ jobs:
           command: |
             npm install
             npm update
-            npm install -g standard
+            npm install -g standard --force
             npm install --legacy-peer-deps
             
       # Tratar os WARNs do npm
@@ -62,20 +62,20 @@ jobs:
             npm install standard --save-dev
             npx standard
             standard
-
-      # Etapa para escanear a aplicação com ESLint
-      - run:
-          name: AppSec - ESLint
-          command: |
-            npm install @eslint/create-config
-            npx eslint .
-                     
+                  
       # Etapa para escanear a aplicação com JSLint
       - run:
           name: AppSec - JSLint
           command: |
             npm install -g jslint
             jslint .
+            
+      # Etapa para escanear a aplicação com ESLint
+       - run:
+          name: AppSec - ESLint
+          command: |
+            npm install @eslint/create-config
+            npx eslint .        
           
       # Etapa para verificar dependências com Retire.js
       - run:
