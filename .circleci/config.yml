@@ -3,7 +3,7 @@ version: 2.1
 jobs:
   build:
     docker:
-      - image: circleci/node:14.17.0
+      - image: circleci/node:20.15.0
     steps:
       - checkout
 
@@ -16,7 +16,6 @@ jobs:
       - run:
           name: Instalar dependências do projeto
           command: |
-            sudo apt update
             sudo apt upgrade docker-ce
             sudo systemctl restart docker
             curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
