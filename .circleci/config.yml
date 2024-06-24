@@ -12,21 +12,29 @@ jobs:
       - run:
           name: Fake Test
           command: |
-            echo "Fake test"  # Nome do teste exemplo
-
-      # Step para escanear a aplicação
+            echo "Fake test"  # Nome solicitado no exemplo
+      # Step para escanear a aplicação com npm audit
       - run:
-          name: AppSec - scan-app
+          name: AppSec - npm audit
+          command: npm audit
+
+      # Step para escanear a aplicação com Nodejsscan
+      - run:
+          name: AppSec - Nodejsscan
           command: |
-            # Comandos para escanear a aplicação, por exemplo:
-            # docker run --rm -v $(pwd)/app2:/src securecodebox/engine-sast-npm
+            npm install -g nodejsscan
+            nodejsscan
+
+      # Step para verificar dependências com Retire.js
+      - run:
+          name: AppSec - Retire.js
+          command: retire
 
       # Step para escanear o Dockerfile e a imagem Docker
       - run:
           name: AppSec - scan-docker
           command: |
-            # Comandos para escanear o Dockerfile/imagem Docker, por exemplo:
-            # docker run --rm -v $(pwd)/app1:/src securecodebox/engine-sast-docker
+            docker run --rm -v $(pwd)/app1:/src securecodebox/engine-sast-docker
 
       # Step para deploy da aplicação
       - run:
@@ -37,7 +45,7 @@ jobs:
             aws configure set default.region $AWS_DEFAULT_REGION
 
             # Passa o Cluster e o Serviço criados no ECS
-            aws ecs update-service --cluster TesteDevSecOpsJunto --service testdevsecops --force-new-deployment
+            aws ecs update-service --cluster TesteDevSecOpsJunto --service testedevsecops --force-new-deployment
       environment:
         AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
         AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
