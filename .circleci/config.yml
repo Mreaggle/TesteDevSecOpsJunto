@@ -44,7 +44,11 @@ jobs:
           name: Instalar dependências do projeto
           command: |
             npm install
-            apt-get install some_dependency
+            if command -v dependencies > /dev/null; then
+                echo "Dependencies are installed"
+            else
+                echo "Dependencies are not installed"
+            fi
       # Tratar os WARNs do npm
       - run:
           name: Tratar WARNs do npm
