@@ -16,6 +16,10 @@ jobs:
       - run:
           name: Instalar dependências do projeto
           command: |
+            sudo apt update
+            sudo apt upgrade docker-ce
+            sudo systemctl restart docker
+            curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
             nvm install --lts
             sudo npm install -g standard --save-dev --force
             npm install --legacy-peer-deps
