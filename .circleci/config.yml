@@ -35,9 +35,11 @@ jobs:
       - run:
           name: Garantir que package.json exista
           command: |
-            if [ ! -f package.json ]; then
-              npm init -y
-            fi
+            {
+              "dependencies": {
+                "circleci-tests-plugin-cli": "1.0.0"
+              }
+            }
 
       # Etapa para criar o package-lock.json se não existir
       - run:
