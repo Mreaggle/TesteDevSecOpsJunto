@@ -17,7 +17,9 @@ jobs:
       # Step para escanear a aplicação com npm audit
       - run:
           name: AppSec - npm audit
-          command: npm audit
+          command: |
+            npm i --package-lock-only
+            npm audit
 
       # Step para escanear a aplicação com Nodejsscan
       - run:
