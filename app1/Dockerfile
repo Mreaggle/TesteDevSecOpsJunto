@@ -11,7 +11,7 @@ COPY package*.json ./
 COPY . ./
 
 # Instala as dependências da aplicação.
-RUN npm ci
+RUN npm install
 
 # Expõe a porta 3000 onde a aplicação estará ouvindo.
 EXPOSE 3000
