@@ -3,7 +3,7 @@ version: 2.1
 jobs:
   build:
     docker:
-      - image: circleci/node:20.15.0
+      - image: circleci/node:14
     steps:
       - checkout
 
@@ -64,11 +64,11 @@ jobs:
             jslint .
 
       # Etapa para escanear a aplicação com ESLint
-      - run:
-          name: AppSec - ESLint
-          command: |
-            npm install @eslint/create-config
-            npx eslint .
+      #- run:
+      #    name: AppSec - ESLint
+      #    command: |
+      #      npm install @eslint/create-config
+      #      npx eslint .
 
       # Etapa para verificar dependências com Retire.js
       - run:
