@@ -6,12 +6,6 @@ jobs:
       - image: circleci/node:latest
     parallelism: 4  # Definir o número de executores paralelos desejados
     steps:
-      # Divisão e execução dos testes em paralelo
-      - run:
-          name: Executar Testes em Paralelo
-          command: |
-            circleci tests split --split-by=timings > test_files.txt || true
-            circleci tests run --no-parallel < test_files.txt
       # Instalar o plugin circleci-tests-plugin-cli sem as bandeiras não suportadas
       - run:
             name: Instalar circleci-tests-plugin-cli
