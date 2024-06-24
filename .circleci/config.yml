@@ -13,6 +13,7 @@ jobs:
           name: Fake Test
           command: |
             echo "Fake test"  # Nome solicitado no exemplo
+
       # Step para escanear a aplicação com npm audit
       - run:
           name: AppSec - npm audit
@@ -30,11 +31,17 @@ jobs:
           name: AppSec - Retire.js
           command: retire
 
-      # Step para escanear o Dockerfile e a imagem Docker
+      # Step para escanear o Dockerfile e a imagem Docker com Clair
       - run:
-          name: AppSec - scan-docker
+          name: AppSec - Clair
           command: |
-            docker run --rm -v $(pwd)/app1:/src securecodebox/engine-sast-docker
+            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock quay.io/coreos/clairctl:latest clairctl analyze -l $(pwd)/app1/Dockerfile
+
+      # Step para escanear o Dockerfile e a imagem Docker com Trivy
+      - run:
+          name: AppSec - Trivy
+          command: |
+            docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest --ignore-unfixed $(pwd)/app1
 
       # Step para deploy da aplicação
       - run:
