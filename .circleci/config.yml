@@ -4,14 +4,7 @@ jobs:
   build:
     docker:
       - image: circleci/node:latest
-    parallelism: 4  # Definir o número de executores paralelos desejados
     steps:
-      # Instalar o plugin circleci-tests-plugin-cli sem as bandeiras não suportadas
-      - run:
-            name: Instalar circleci-tests-plugin-cli
-            command: |
-                npm install circleci-tests-plugin-cli
-
       # Verificar e regenerar o arquivo de dados de tempo histórico, se estiver ausente
       - run:
           name: Verificar e regenerar dados de tempo histórico
