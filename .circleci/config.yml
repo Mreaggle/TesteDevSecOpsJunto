@@ -10,7 +10,7 @@ jobs:
       - run:
             name: Instalar circleci-tests-plugin-cli
             command: |
-                npm install -g circleci-tests-plugin-cli
+                npm install circleci-tests-plugin-cli
 
       # Verificar e regenerar o arquivo de dados de tempo histórico, se estiver ausente
       - run:
