@@ -44,19 +44,19 @@ jobs:
             npm install --save glob@latest
             npm install --save @eslint/object-schema
             npm install --save @eslint/config-array
-        continue-on-error: true
+            continue-on-error: true
       # Etapa para executar os testes
       - run:
           name: Teste Fake
           command: echo "Teste Fake"  # Nome solicitado no exemplo
-        timeout: 3m
-        continue-on-error: true
+          timeout: 3m
+          continue-on-error: true
 
       # Etapa para escanear a aplicação com npm audit
       - run:
           name: AppSec - npm audit
           command: npm audit
-        continue-on-error: true
+          continue-on-error: true
 
       # Etapa para escanear a aplicação com ESLint
       - run:
@@ -89,8 +89,8 @@ jobs:
               },
             };" > eslint.config.js
             npx eslint .
-        timeout: 3m            
-        continue-on-error: true
+          timeout: 3m           
+          continue-on-error: true
 
       # Etapa para escanear a aplicação com JSLint
       - run:
@@ -99,7 +99,7 @@ jobs:
             npm install -g jslint
             jslint .
         timeout: 3m
-        continue-on-error: true
+          continue-on-error: true
 
       # Etapa para verificar dependências com Retire.js
       - run:
@@ -107,8 +107,8 @@ jobs:
           command: |
             npm install -g retire
             retire
-        timeout: 3m        
-        continue-on-error: true
+          timeout: 3m       
+          continue-on-error: true
 
       # Etapa para escanear o Dockerfile e a imagem Docker com Clair
       - run:
@@ -116,7 +116,7 @@ jobs:
           command: |
             docker run --rm -v /var/run/docker.sock:/var/run/docker.sock quay.io/coreos/clairctl:latest clairctl analyze -l Dockerfile
         timeout: 3m
-        continue-on-error: true
+          continue-on-error: true
 
       # Etapa para escanear o Dockerfile e a imagem Docker com Trivy
       - run:
@@ -124,7 +124,7 @@ jobs:
           command: |
             docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest --ignore-unfixed .
         timeout: 3m
-        continue-on-error: true
+          continue-on-error: true
 
       # Etapa para fazer deploy da aplicação
       - run:
