@@ -41,45 +41,6 @@ jobs:
           name: AppSec - npm audit
           command: npm audit
 
-      # Etapa para escanear a aplicação com ESLint
-      - run:
-          name: AppSec - ESLint
-          command: |
-            npm install eslint eslint-plugin-react --save-dev
-            npx eslint --init --max-warnings=0 --force
-            echo "module.exports = {
-              env: {
-                browser: true,
-                es2021: true,
-                node: true,
-              },
-              extends: [
-                'eslint:recommended',
-                'plugin:react/recommended',
-              ],
-              parserOptions: {
-                ecmaFeatures: {
-                  jsx: true,
-                },
-                ecmaVersion: 12,
-                sourceType: 'module',
-              },
-              plugins: [
-                'react',
-              ],
-              rules: {
-                'react/react-in-jsx-scope': 'off',
-              },
-            };" > eslint.config.js
-            npx eslint .
-
-      # Etapa para verificar dependências com Retire.js
-      - run:
-          name: AppSec - Retire.js
-          command: |
-            npm install -g retire
-            retire
-
       # Etapa para escanear o Dockerfile e a imagem Docker com Clair
       - run:
           name: AppSec - Clair
@@ -92,6 +53,29 @@ jobs:
           command: |
             docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest --ignore-unfixed .
 
+      # Etapa para substituir ESLint por StandardJS
+      - run:
+          name: AppSec - StandardJS
+          command: |
+            npm install --save-dev standard
+            npx standard --fix
+
+      # Etapa para tratar os WARNs do npm
+      - run:
+          name: Tratar WARNs do npm
+          command: |
+            npm install --save lru-cache
+            npm install --save rimraf@latest
+            npm install --save glob@latest
+            npm install --save @eslint/object-schema
+            npm install --save @eslint/config-array
+
+      # Etapa para executar os testes em paralelo
+      - run:
+          name: Executar Testes em Paralelo
+          command: |
+            circleci tests split --split-by=timings | circleci tests run --config .circleci/config.yml --
+
       # Etapa para fazer deploy da aplicação
       - run:
           name: Deploy para AWS ECS
@@ -103,16 +87,6 @@ jobs:
             # Atualizar o serviço ECS
             aws ecs update-service --cluster TesteDevSecOpsJunto --service testedevsecops --force-new-deployment
 
-      # Etapa para commitar as alterações no arquivo .circleci/config.yml
-      - run:
-          name: Commit Changes
-          command: |
-            git config --global user.email "kauancdias@outlook.com"
-            git config --global user.name "Mreaggle"
-            git add .circleci/config.yml
-            git commit -m "Atualização do arquivo .circleci/config.yml"
-            git push origin HEAD
-
     environment:
       AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID
       AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY
@@ -120,6 +94,6 @@ jobs:
 
 workflows:
   version: 2
-  build-and-deploy:
+  build-and-test:
     jobs:
       - build
