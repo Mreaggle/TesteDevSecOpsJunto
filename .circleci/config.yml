@@ -29,6 +29,9 @@ jobs:
           name: Instalar dependências do projeto
           command: |
             npm install
+            npm update
+            npm install -g standard
+            npm install --legacy-peer-deps
             
       # Tratar os WARNs do npm
       - run:
@@ -45,83 +48,55 @@ jobs:
       - run:
           name: Teste Fake
           command: echo "Teste Fake"  # Nome solicitado no exemplo
-          timeout: 3m
+          
 
 
       # Etapa para escanear a aplicação com npm audit
       - run:
           name: AppSec - npm audit
           command: npm audit
+      # Executar o StandardJS no diretório do seu projeto
+      - run:
+          name: AppSec - StandardJS
+           command: |
+            npm install standard --save-dev
+            npx standard
 
+        standard
 
       # Etapa para escanear a aplicação com ESLint
       - run:
           name: AppSec - ESLint
           command: |
-            npm install eslint eslint-plugin-react --save-dev
-            npx eslint --init --max-warnings=0 --force
-            echo "module.exports = {
-              env: {
-                browser: true,
-                es2021: true,
-                node: true,
-              },
-              extends: [
-                'eslint:recommended',
-                'plugin:react/recommended',
-              ],
-              parserOptions: {
-                ecmaFeatures: {
-                  jsx: true,
-                },
-                ecmaVersion: 12,
-                sourceType: 'module',
-              },
-              plugins: [
-                'react',
-              ],
-              rules: {
-                'react/react-in-jsx-scope': 'off',
-              },
-            };" > eslint.config.js
+            npm install @eslint/create-config
             npx eslint .
-          timeout: 3m           
-
-
+                     
       # Etapa para escanear a aplicação com JSLint
       - run:
           name: AppSec - JSLint
           command: |
             npm install -g jslint
             jslint .
-          timeout: 3m
-
-
+          
       # Etapa para verificar dependências com Retire.js
       - run:
           name: AppSec - Retire.js
           command: |
             npm install -g retire
             retire
-          timeout: 3m       
-
-
+                 
       # Etapa para escanear o Dockerfile e a imagem Docker com Clair
       - run:
           name: AppSec - Clair
           command: |
             docker run --rm -v /var/run/docker.sock:/var/run/docker.sock quay.io/coreos/clairctl:latest clairctl analyze -l Dockerfile
-          timeout: 3m
-
-
+          
       # Etapa para escanear o Dockerfile e a imagem Docker com Trivy
       - run:
           name: AppSec - Trivy
           command: |
             docker run --rm -v /var/run/docker.sock:/var/run/docker.sock aquasec/trivy:latest --ignore-unfixed .
-          timeout: 3m
-
-
+          
       # Etapa para fazer deploy da aplicação
       - run:
           name: Deploy para AWS ECS
