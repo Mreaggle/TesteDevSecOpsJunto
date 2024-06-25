@@ -87,6 +87,7 @@ jobs:
       - run:
           name: Construir e enviar imagem Docker (app1) # Constrói e envia a imagem Docker para o Docker Hub
           command: |
+            cd /home/circleci/project/app1
             docker build -t ${DOCKERHUB_USER}/testdevsecopsjunto:latest .
             echo ${DOCKERHUB_PASSWORD} | docker login -u ${DOCKERHUB_USER} --password-stdin
             docker push ${DOCKERHUB_USER}/testdevsecopsjunto:latest
