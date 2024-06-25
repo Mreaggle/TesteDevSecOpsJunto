@@ -6,6 +6,7 @@ jobs:
       - image: cimg/node:18.12.0 # Imagem Node.js 18.12.0 next-gen
     working_directory: ~/project # Define o diretório de trabalho para /home/circleci/project
     steps:
+      - setup_remote_docker
       - checkout # Faz o checkout do código-fonte do repositório
       - run:
           name: Executar comando Docker # Constrói a imagem Docker com a tag especificada no Docker Hub
