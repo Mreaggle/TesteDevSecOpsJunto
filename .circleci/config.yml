@@ -71,7 +71,7 @@ jobs:
             docker run -d -p 5432:5432 -e POSTGRES_PASSWORD=password --name db postgres:latest
             docker run --rm -it --link db:postgres -v $PWD:/tmp/src arminc/clair-scanner:latest clair-db:postgres clair:http://clair:6060 /tmp/src app1
 
-  deploy-app1: # Job para deploy da aplicação app1 no AWS ECS
+  deploy-app1: # Job para deploy da aplicação app1 no AWS ECS Fargate
     docker:
       - image: circleci/amazon-linux-2:2018.03 # Imagem compatível com AWS CLI
     steps:
@@ -79,12 +79,22 @@ jobs:
       - run:
           name: Configurar AWS CLI
           command: |
-            aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID # Define a chave de acesso da AWS
-            aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY # Define a chave secreta da AWS
-            aws configure set default.region $AWS_DEFAULT_REGION # Define a região padrão da AWS
+            aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
+            aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+            aws configure set default.region $AWS_DEFAULT_REGION
+      - run:
+          name: Construir e enviar imagem Docker (app1)
+          command: |
+            docker build -t $DOCKERHUB_USER/testdevsecopsjunto:latest .
+            echo $DOCKERHUB_PASSWORD | docker login -u $DOCKERHUB_USER --password-stdin
+            docker push $DOCKERHUB_USER/testdevsecopsjunto:latest
+      - run:
+          name: Atualizar task definition com nova imagem
+          command: |
+            aws ecs register-task-definition --cli-input-json file://ecs_task_definition.json --family testedevsecops 
       - run:
           name: Deploy da aplicação app1
-          command: aws ecs update-service --cluster TesteDevSecOpsJunto --service testedevsecops --force-new-deployment --container-image testdevsecopsjunto # Atualiza o serviço no ECS forçando um novo deploy
+          command: aws ecs update-service --cluster TesteDevSecOpsJunto --service testedevsecops --force-new-deployment #Força um novo deploy na AWS
 
 # Define o workflow para executar os jobs sequencialmente
 workflows:
