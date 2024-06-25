@@ -4,12 +4,13 @@ jobs:
   checkout: # Job para realizar o checkout do código e construir a imagem Docker
     docker:
       - image: cimg/node:18.12.0 # Imagem Node.js 18.12.0 next-gen
+    working_directory: ~/project # Define o diretório de trabalho para /home/circleci/project
     steps:
+      - checkout # Faz o checkout do código-fonte do repositório
       - run:
           name: Executar comando Docker # Constrói a imagem Docker com a tag especificada no Docker Hub
           command: |
             #!/bin/bash -eo pipefail # Define o shell e as opções de erro
-            cd /home/circleci/project # Navega para o diretório do projeto
             echo "Listando diretórios:" # Imprime mensagem informativa
             ls -la  # Lista os arquivos e diretórios no projeto
             if [ -d "app1" ]; then # Verifica se o diretório app1 existe
@@ -18,18 +19,17 @@ jobs:
               echo "Erro: Diretório app1 não encontrado!" # Imprime mensagem de erro se o diretório não for encontrado
               exit 1 # Sai do script com erro
             fi
-      - checkout # Faz o checkout do código-fonte do repositório
 
   test-app1: # Job para executar os testes unitários da aplicação app1
     docker:
       - image: cimg/node:18.12.0
+    working_directory: ~/project # Define o diretório de trabalho para /home/circleci/project
     steps:
       - checkout # Faz o checkout do código-fonte do repositório
       - run:
           name: Executar testes (app1) # Executa os testes unitários da aplicação app1
           command: |
             #!/bin/bash -eo pipefail # Define o shell e as opções de erro
-            cd /home/circleci/project # Navega para o diretório do projeto
             echo "Listando diretórios:" # Imprime mensagem informativa
             ls -la  # Lista os arquivos e diretórios no projeto
             if [ -d "app1" ]; then # Verifica se o diretório app1 existe
@@ -42,13 +42,13 @@ jobs:
   scan-app-app2: # Job para realizar análise estática de segurança da aplicação app2
     docker:
       - image: cimg/node:18.12.0
+    working_directory: ~/project # Define o diretório de trabalho para /home/circleci/project
     steps:
       - checkout # Faz o checkout do código-fonte do repositório
       - run:
           name: Instalar ESLint (app2) # Instala ESLint como dependência de desenvolvimento
           command: |
             #!/bin/bash -eo pipefail # Define o shell e as opções de erro
-            cd /home/circleci/project # Navega para o diretório do projeto
             echo "Listando diretórios:" # Imprime mensagem informativa
             ls -la  # Lista os arquivos e diretórios no projeto
             if [ -d "app2" ]; then # Verifica se o diretório app2 existe
@@ -61,7 +61,6 @@ jobs:
           name: Executar ESLint (app2) # Executa a análise de código com ESLint
           command: |
             #!/bin/bash -eo pipefail # Define o shell e as opções de erro
-            cd /home/circleci/project # Navega para o diretório do projeto
             echo "Listando diretórios:" # Imprime mensagem informativa
             ls -la  # Lista os arquivos e diretórios no projeto
             if [ -d "app2" ]; then # Verifica se o diretório app2 existe
@@ -81,7 +80,6 @@ jobs:
           name: Executar SonarQube Scanner (app2) # Executa a análise SAST com o SonarQube Scanner
           command: |
             #!/bin/bash -eo pipefail # Define o shell e as opções de erro
-            cd /home/circleci/project # Navega para o diretório do projeto
             echo "Listando diretórios:" # Imprime mensagem informativa
             ls -la  # Lista os arquivos e diretórios no projeto
             if [ -d "app2" ]; then # Verifica se o diretório app2 existe
@@ -97,7 +95,6 @@ jobs:
           name: Executar Snyk (app2) # Executa a análise de vulnerabilidades com Snyk
           command: |
             #!/bin/bash -eo pipefail # Define o shell e as opções de erro
-            cd /home/circleci/project # Navega para o diretório do projeto
             echo "Listando diretórios:" # Imprime mensagem informativa
             ls -la  # Lista os arquivos e diretórios no projeto
             if [ -d "app2" ]; then # Verifica se o diretório app2 existe
@@ -110,6 +107,7 @@ jobs:
   scan-docker-app1: # Job para realizar análise de segurança da imagem Docker da app1
     docker:
       - image: cimg/node:18.12.0
+    working_directory: ~/project # Define o diretório de trabalho para /home/circleci/project
     steps:
       - checkout # Faz o checkout do código-fonte do repositório
       - setup_remote_docker # Configura um ambiente Docker remoto
@@ -117,7 +115,6 @@ jobs:
           name: Construir imagem Docker (app1) # Constrói a imagem Docker com a tag 'app1'
           command: |
             #!/bin/bash -eo pipefail # Define o shell e as opções de erro
-            cd /home/circleci/project # Navega para o diretório do projeto
             echo "Listando diretórios:" # Imprime mensagem informativa
             ls -la  # Lista os arquivos e diretórios no projeto
             if [ -d "app1" ]; then # Verifica se o diretório app1 existe
@@ -139,6 +136,7 @@ jobs:
   deploy-app1: # Job para realizar o deploy da aplicação app1 no AWS ECS Fargate
     docker:
       - image: cimg/amazonlinux2:2018.03 # Imagem compatível com AWS CLI, next-gen
+    working_directory: ~/project # Define o diretório de trabalho para /home/circleci/project
     steps:
       - checkout # Faz o checkout do código-fonte do repositório
       - run:
@@ -151,7 +149,6 @@ jobs:
           name: Construir e enviar imagem Docker (app1) # Constrói e envia a imagem Docker para o Docker Hub
           command: |
             #!/bin/bash -eo pipefail # Define o shell e as opções de erro
-            cd /home/circleci/project # Navega para o diretório do projeto
             echo "Listando diretórios:" # Imprime mensagem informativa
             ls -la  # Lista os arquivos e diretórios no projeto
             if [ -d "app1" ]; then # Verifica se o diretório app1 existe
