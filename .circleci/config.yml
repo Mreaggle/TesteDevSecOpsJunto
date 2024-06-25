@@ -8,7 +8,7 @@ jobs:
       - run:
           name: Executar comando Docker # Constrói a imagem Docker com a tag especificada no Docker Hub
           command: |
-            /home/circleci/project/app1
+            cd /home/circleci/project/app1
             docker build -t ${DOCKERHUB_USER}/testdevsecopsjunto:latest .
       - checkout # Faz o checkout do código-fonte do repositório
 
