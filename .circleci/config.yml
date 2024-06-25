@@ -1,69 +1,69 @@
-version: 2.1 # Versão do CircleCI
+version: 2.1
 
 jobs:
-  checkout:
+  checkout: # Job para realizar o checkout do código e construir a imagem Docker
     docker:
-      - image: circleci/node:18 # Imagem Node.js 18.12.0 no CircleCI para consistência com o Dockerfile
+      - image: cimg/node:18.12.0 # Imagem Node.js 18.12.0 next-gen
     steps:
       - run:
-          name: Executar comando Docker
-          command: docker build -t docker.io/testdevsecopsjunto:latest .
+          name: Executar comando Docker # Constrói a imagem Docker com a tag especificada no Docker Hub
+          command: docker build -t $DOCKERHUB_USER/testdevsecopsjunto:latest .
       - checkout # Faz o checkout do código-fonte do repositório
 
-  test-app1:
+  test-app1: # Job para executar os testes unitários da aplicação app1
     docker:
-      - image: circleci/node:18
+      - image: cimg/node:18.12.0
     steps:
-      - checkout
+      - checkout # Faz o checkout do código-fonte do repositório
       - run:
-          name: Executar testes (app1)
-          command: cd app1 && npm test # Executa os testes unitários da aplicação app1
+          name: Executar testes (app1) # Executa os testes unitários da aplicação app1
+          command: cd app1 && npm test
 
-  scan-app-app2: # Job para análise estática de segurança da aplicação app2
+  scan-app-app2: # Job para realizar análise estática de segurança da aplicação app2
     docker:
-      - image: circleci/node:18
+      - image: cimg/node:18.12.0
     steps:
-      - checkout
+      - checkout # Faz o checkout do código-fonte do repositório
       - run:
-          name: Instalar ESLint (app2)
-          command: cd app2 && npm install eslint@^7 --save-dev # Instala ESLint como dependência de desenvolvimento
+          name: Instalar ESLint (app2) # Instala ESLint como dependência de desenvolvimento
+          command: cd app2 && npm install eslint@^7 --save-dev
       - run:
-          name: Executar ESLint (app2)
-          command: cd app2 && ./node_modules/.bin/eslint src/** # Executa a análise de código com ESLint
+          name: Executar ESLint (app2) # Executa a análise de código com ESLint
+          command: cd app2 && ./node_modules/.bin/eslint src/**
       - run:
-          name: Instalar SonarQube Scanner
+          name: Instalar SonarQube Scanner # Instala o SonarQube Scanner para análise SAST
           command: |
             wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.7.0.2747-linux.zip
             unzip sonar-scanner-cli-4.7.0.2747-linux.zip
             sudo mv sonar-scanner-4.7.0.2747-linux /opt/sonar-scanner
             sudo ln -s /opt/sonar-scanner/bin/sonar-scanner /usr/local/bin/sonar-scanner
       - run:
-          name: Executar SonarQube Scanner (app2)
+          name: Executar SonarQube Scanner (app2) # Executa a análise SAST com o SonarQube Scanner
           command: |
             cd app2
-            sonar-scanner -Dsonar.projectKey=app2 \ # Define o nome do projeto no SonarQube
-              -Dsonar.organization=mreaggle \ # Define a organização no SonarQube
-              -Dsonar.host.url=https://sonarcloud.io \ # URL do servidor SonarQube
-              -Dsonar.login=$SONAR_TOKEN # Token de autenticação do SonarQube
+            sonar-scanner -Dsonar.projectKey=app2 # Define o nome do projeto no SonarCloud
+              -Dsonar.organization=$SONAR_ORGANIZATION # Define a organização no SonarCloud
+              -Dsonar.host.url=https://sonarcloud.io # URL do servidor SonarCloud
+              -Dsonar.login=$SONAR_TOKEN # Token de autenticação do SonarCloud
       - run:
-          name: Instalar Snyk
-          command: npm install -g snyk # Instala Snyk globalmente
+          name: Instalar Snyk # Instala Snyk para análise de vulnerabilidades
+          command: npm install -g snyk
       - run:
-          name: Executar Snyk (app2)
-          command: cd app2 && snyk test --severity-threshold=high # Executa a análise de vulnerabilidades com Snyk
+          name: Executar Snyk (app2) # Executa a análise de vulnerabilidades com Snyk
+          command: cd app2 && snyk test --severity-threshold=high
 
-  scan-docker-app1: # Job para análise de segurança da imagem Docker da app1
+  scan-docker-app1: # Job para realizar análise de segurança da imagem Docker da app1
     docker:
-      - image: circleci/node:18
+      - image: cimg/node:18.12.0
     steps:
-      - checkout
+      - checkout # Faz o checkout do código-fonte do repositório
       - setup_remote_docker # Configura um ambiente Docker remoto
       - run:
-          name: Construir imagem Docker (app1)
-          command: docker build -t app1 . # Constrói a imagem Docker com a tag 'app1'
+          name: Construir imagem Docker (app1) # Constrói a imagem Docker com a tag 'app1'
+          command: docker build -t app1 .
       - run:
-          name: Executar Trivy (app1)
-          command: docker run --rm aquasec/trivy:latest image app1 # Executa Trivy para analisar a imagem 'app1'
+          name: Executar Trivy (app1) # Executa Trivy para analisar a imagem 'app1' em busca de vulnerabilidades
+          command: docker run --rm aquasec/trivy:latest image app1
       - run:
           name: Executar Clair (app1) # Utiliza Clair para uma segunda validação da imagem, complementando o Trivy
           command: |
@@ -71,46 +71,46 @@ jobs:
             docker run -d -p 5432:5432 -e POSTGRES_PASSWORD=password --name db postgres:latest
             docker run --rm -it --link db:postgres -v $PWD:/tmp/src arminc/clair-scanner:latest clair-db:postgres clair:http://clair:6060 /tmp/src app1
 
-  deploy-app1: # Job para deploy da aplicação app1 no AWS ECS Fargate
+  deploy-app1: # Job para realizar o deploy da aplicação app1 no AWS ECS Fargate
     docker:
-      - image: circleci/amazon-linux-2:2018.03 # Imagem compatível com AWS CLI
+      - image: cimg/amazonlinux2:2018.03 # Imagem compatível com AWS CLI, next-gen
     steps:
-      - checkout
+      - checkout # Faz o checkout do código-fonte do repositório
       - run:
-          name: Configurar AWS CLI
+          name: Configurar AWS CLI # Configura as credenciais da AWS para uso no pipeline
           command: |
             aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
             aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
             aws configure set default.region $AWS_DEFAULT_REGION
       - run:
-          name: Construir e enviar imagem Docker (app1)
+          name: Construir e enviar imagem Docker (app1) # Constrói e envia a imagem Docker para o Docker Hub
           command: |
             docker build -t $DOCKERHUB_USER/testdevsecopsjunto:latest .
             echo $DOCKERHUB_PASSWORD | docker login -u $DOCKERHUB_USER --password-stdin
             docker push $DOCKERHUB_USER/testdevsecopsjunto:latest
       - run:
-          name: Atualizar task definition com nova imagem
+          name: Atualizar task definition com nova imagem # Atualiza a task definition no ECS com a nova imagem Docker
           command: |
-            aws ecs register-task-definition --cli-input-json file://ecs_task_definition.json --family testedevsecops 
+            aws ecs register-task-definition --cli-input-json file://ecs_task_definition.json --family testedevsecops
       - run:
-          name: Deploy da aplicação app1
-          command: aws ecs update-service --cluster TesteDevSecOpsJunto --service testedevsecops --force-new-deployment #Força um novo deploy na AWS
+          name: Deploy da aplicação app1 # Realiza o deploy da aplicação no ECS Fargate, forçando um novo deploy
+          command: aws ecs update-service --cluster TesteDevSecOpsJunto --service testedevsecops --force-new-deployment
 
 # Define o workflow para executar os jobs sequencialmente
 workflows:
   build_and_deploy:
     jobs:
-      - checkout
-      - test-app1:
+      - checkout # Executa o job 'checkout' primeiro
+      - test-app1: # Executa o job 'test-app1' após o 'checkout'
           requires:
             - checkout
-      - scan-app-app2:
+      - scan-app-app2: # Executa o job 'scan-app-app2' após o 'checkout'
           requires:
             - checkout
-      - scan-docker-app1:
+      - scan-docker-app1: # Executa o job 'scan-docker-app1' após o 'checkout'
           requires:
             - checkout
-      - deploy-app1:
+      - deploy-app1: # Executa o job 'deploy-app1' após os jobs de teste e análise de segurança
           requires:
             - test-app1
             - scan-app-app2
