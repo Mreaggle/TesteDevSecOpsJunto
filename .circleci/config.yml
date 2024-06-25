@@ -6,6 +6,9 @@ jobs:
       - image: cimg/node:18.12.0 # Imagem Node.js 18.12.0 next-gen
     steps:
       - run:
+          name: Navegar para o diretório app1 #Navega para o diretório Dockerfile
+          command: cd app1
+      - run:
           name: Executar comando Docker # Constrói a imagem Docker com a tag especificada no Docker Hub
           command: docker build -t ${DOCKERHUB_USER}/testdevsecopsjunto:latest .
       - checkout # Faz o checkout do código-fonte do repositório
