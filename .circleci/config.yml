@@ -77,6 +77,7 @@ jobs:
               exit 1 # Sai do script com erro
             fi
     steps:
+      steps:
       - run:
           name: Instalar SonarQube Scanner
           command: |
