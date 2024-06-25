@@ -7,7 +7,7 @@ jobs:
     steps:
       - run:
           name: Executar comando Docker # Constrói a imagem Docker com a tag especificada no Docker Hub
-          command: docker build -t $DOCKERHUB_USER/testdevsecopsjunto:latest .
+          command: docker build -t ${DOCKERHUB_USER}/testdevsecopsjunto:latest .
       - checkout # Faz o checkout do código-fonte do repositório
 
   test-app1: # Job para executar os testes unitários da aplicação app1
@@ -42,9 +42,9 @@ jobs:
           command: |
             cd app2
             sonar-scanner -Dsonar.projectKey=app2 # Define o nome do projeto no SonarCloud
-              -Dsonar.organization=$SONAR_ORGANIZATION # Define a organização no SonarCloud
+              -Dsonar.organization=${SONAR_ORGANIZATION} # Define a organização no SonarCloud
               -Dsonar.host.url=https://sonarcloud.io # URL do servidor SonarCloud
-              -Dsonar.login=$SONAR_TOKEN # Token de autenticação do SonarCloud
+              -Dsonar.login=${SONAR_TOKEN} # Token de autenticação do SonarCloud
       - run:
           name: Instalar Snyk # Instala Snyk para análise de vulnerabilidades
           command: npm install -g snyk
@@ -79,15 +79,15 @@ jobs:
       - run:
           name: Configurar AWS CLI # Configura as credenciais da AWS para uso no pipeline
           command: |
-            aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
-            aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
-            aws configure set default.region $AWS_DEFAULT_REGION
+            aws configure set aws_access_key_id ${AWS_ACCESS_KEY_ID}
+            aws configure set aws_secret_access_key ${AWS_SECRET_ACCESS_KEY}
+            aws configure set default.region ${AWS_DEFAULT_REGION}
       - run:
           name: Construir e enviar imagem Docker (app1) # Constrói e envia a imagem Docker para o Docker Hub
           command: |
-            docker build -t $DOCKERHUB_USER/testdevsecopsjunto:latest .
-            echo $DOCKERHUB_PASSWORD | docker login -u $DOCKERHUB_USER --password-stdin
-            docker push $DOCKERHUB_USER/testdevsecopsjunto:latest
+            docker build -t ${DOCKERHUB_USER}/testdevsecopsjunto:latest .
+            echo ${DOCKERHUB_PASSWORD} | docker login -u ${DOCKERHUB_USER} --password-stdin
+            docker push ${DOCKERHUB_USER}/testdevsecopsjunto:latest
       - run:
           name: Atualizar task definition com nova imagem # Atualiza a task definition no ECS com a nova imagem Docker
           command: |
