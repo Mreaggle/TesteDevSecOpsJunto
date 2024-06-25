@@ -7,7 +7,7 @@ jobs:
     steps:
       - run:
           name: Navegar para o diretório app1 #Navega para o diretório Dockerfile
-          command: cd app1
+          command: /home/circleci/project/app1
       - run:
           name: Executar comando Docker # Constrói a imagem Docker com a tag especificada no Docker Hub
           command: docker build -t ${DOCKERHUB_USER}/testdevsecopsjunto:latest .
