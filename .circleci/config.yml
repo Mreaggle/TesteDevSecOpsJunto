@@ -8,8 +8,15 @@ jobs:
       - run:
           name: Executar comando Docker # Constrói a imagem Docker com a tag especificada no Docker Hub
           command: |
-            cd /home/circleci/project/app1
-            docker build -t ${DOCKERHUB_USER}/testdevsecopsjunto:latest .
+            #!/bin/bash -eo pipefail # Define o shell e as opções de erro
+            echo "Listando diretórios:" # Imprime mensagem informativa
+            ls -la /home/circleci/project # Lista os arquivos e diretórios no projeto
+            if [ -d "/home/circleci/project/app1" ]; then # Verifica se o diretório app1 existe
+              cd /home/circleci/project/app1 && docker build -t ${DOCKERHUB_USER}/testdevsecopsjunto:latest . # Navega até app1 e constrói a imagem
+            else
+              echo "Erro: Diretório /home/circleci/project/app1 não encontrado!" # Imprime mensagem de erro se o diretório não for encontrado
+              exit 1 # Sai do script com erro
+            fi
       - checkout # Faz o checkout do código-fonte do repositório
 
   test-app1: # Job para executar os testes unitários da aplicação app1
@@ -19,7 +26,16 @@ jobs:
       - checkout # Faz o checkout do código-fonte do repositório
       - run:
           name: Executar testes (app1) # Executa os testes unitários da aplicação app1
-          command: cd app1 && npm test
+          command: |
+            #!/bin/bash -eo pipefail
+            echo "Listando diretórios:"
+            ls -la /home/circleci/project
+            if [ -d "/home/circleci/project/app1" ]; then
+              cd /home/circleci/project/app1 && npm test
+            else
+              echo "Erro: Diretório /home/circleci/project/app1 não encontrado!"
+              exit 1
+            fi
 
   scan-app-app2: # Job para realizar análise estática de segurança da aplicação app2
     docker:
@@ -28,10 +44,28 @@ jobs:
       - checkout # Faz o checkout do código-fonte do repositório
       - run:
           name: Instalar ESLint (app2) # Instala ESLint como dependência de desenvolvimento
-          command: cd app2 && npm install eslint@^7 --save-dev
+          command: |
+            #!/bin/bash -eo pipefail
+            echo "Listando diretórios:"
+            ls -la /home/circleci/project
+            if [ -d "/home/circleci/project/app2" ]; then
+              cd /home/circleci/project/app2 && npm install eslint@^7 --save-dev
+            else
+              echo "Erro: Diretório /home/circleci/project/app2 não encontrado!"
+              exit 1
+            fi
       - run:
           name: Executar ESLint (app2) # Executa a análise de código com ESLint
-          command: cd app2 && ./node_modules/.bin/eslint src/**
+          command: |
+            #!/bin/bash -eo pipefail
+            echo "Listando diretórios:"
+            ls -la /home/circleci/project
+            if [ -d "/home/circleci/project/app2" ]; then
+              cd /home/circleci/project/app2 && ./node_modules/.bin/eslint src/**
+            else
+              echo "Erro: Diretório /home/circleci/project/app2 não encontrado!"
+              exit 1
+            fi
       - run:
           name: Instalar SonarQube Scanner # Instala o SonarQube Scanner para análise SAST
           command: |
@@ -42,17 +76,30 @@ jobs:
       - run:
           name: Executar SonarQube Scanner (app2) # Executa a análise SAST com o SonarQube Scanner
           command: |
-            cd app2
-            sonar-scanner -Dsonar.projectKey=app2 # Define o nome do projeto no SonarCloud
-              -Dsonar.organization=${SONAR_ORGANIZATION} # Define a organização no SonarCloud
-              -Dsonar.host.url=https://sonarcloud.io # URL do servidor SonarCloud
-              -Dsonar.login=${SONAR_TOKEN} # Token de autenticação do SonarCloud
+            #!/bin/bash -eo pipefail
+            echo "Listando diretórios:"
+            ls -la /home/circleci/project
+            if [ -d "/home/circleci/project/app2" ]; then
+              cd /home/circleci/project/app2 && sonar-scanner -Dsonar.projectKey=app2 -Dsonar.organization=$SONAR_ORGANIZATION -Dsonar.host.url=https://sonarcloud.io -Dsonar.login=$SONAR_TOKEN
+            else
+              echo "Erro: Diretório /home/circleci/project/app2 não encontrado!"
+              exit 1
+            fi
       - run:
           name: Instalar Snyk # Instala Snyk para análise de vulnerabilidades
           command: npm install -g snyk
       - run:
           name: Executar Snyk (app2) # Executa a análise de vulnerabilidades com Snyk
-          command: cd app2 && snyk test --severity-threshold=high
+          command: |
+            #!/bin/bash -eo pipefail
+            echo "Listando diretórios:"
+            ls -la /home/circleci/project
+            if [ -d "/home/circleci/project/app2" ]; then
+              cd /home/circleci/project/app2 && snyk test --severity-threshold=high
+            else
+              echo "Erro: Diretório /home/circleci/project/app2 não encontrado!"
+              exit 1
+            fi
 
   scan-docker-app1: # Job para realizar análise de segurança da imagem Docker da app1
     docker:
@@ -62,7 +109,16 @@ jobs:
       - setup_remote_docker # Configura um ambiente Docker remoto
       - run:
           name: Construir imagem Docker (app1) # Constrói a imagem Docker com a tag 'app1'
-          command: docker build -t app1 .
+          command: |
+            #!/bin/bash -eo pipefail
+            echo "Listando diretórios:"
+            ls -la /home/circleci/project
+            if [ -d "/home/circleci/project/app1" ]; then
+              cd /home/circleci/project/app1 && docker build -t app1 .
+            else
+              echo "Erro: Diretório /home/circleci/project/app1 não encontrado!"
+              exit 1
+            fi
       - run:
           name: Executar Trivy (app1) # Executa Trivy para analisar a imagem 'app1' em busca de vulnerabilidades
           command: docker run --rm aquasec/trivy:latest image app1
@@ -81,16 +137,23 @@ jobs:
       - run:
           name: Configurar AWS CLI # Configura as credenciais da AWS para uso no pipeline
           command: |
-            aws configure set aws_access_key_id ${AWS_ACCESS_KEY_ID}
-            aws configure set aws_secret_access_key ${AWS_SECRET_ACCESS_KEY}
-            aws configure set default.region ${AWS_DEFAULT_REGION}
+            aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
+            aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+            aws configure set default.region $AWS_DEFAULT_REGION
       - run:
           name: Construir e enviar imagem Docker (app1) # Constrói e envia a imagem Docker para o Docker Hub
           command: |
-            cd /home/circleci/project/app1
-            docker build -t ${DOCKERHUB_USER}/testdevsecopsjunto:latest .
-            echo ${DOCKERHUB_PASSWORD} | docker login -u ${DOCKERHUB_USER} --password-stdin
-            docker push ${DOCKERHUB_USER}/testdevsecopsjunto:latest
+            #!/bin/bash -eo pipefail # Define o shell e as opções de erro
+            echo "Listando diretórios:" # Imprime mensagem informativa
+            ls -la /home/circleci/project # Lista os arquivos e diretórios no projeto
+            if [ -d "/home/circleci/project/app1" ]; then # Verifica se o diretório app1 existe
+              cd /home/circleci/project/app1 && docker build -t ${DOCKERHUB_USER}/testdevsecopsjunto:latest . # Navega até app1 e constrói a imagem
+              echo $DOCKERHUB_PASSWORD | docker login -u $DOCKERHUB_USER --password-stdin # Faz login no Docker Hub
+              docker push ${DOCKERHUB_USER}/testdevsecopsjunto:latest # Envia a imagem para o Docker Hub
+            else
+              echo "Erro: Diretório /home/circleci/project/app1 não encontrado!" # Imprime mensagem de erro se o diretório não for encontrado
+              exit 1 # Sai do script com erro
+            fi
       - run:
           name: Atualizar task definition com nova imagem # Atualiza a task definition no ECS com a nova imagem Docker
           command: |
