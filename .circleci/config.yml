@@ -9,12 +9,13 @@ jobs:
           name: Executar comando Docker # Constrói a imagem Docker com a tag especificada no Docker Hub
           command: |
             #!/bin/bash -eo pipefail # Define o shell e as opções de erro
+            cd /home/circleci/project # Navega para o diretório do projeto
             echo "Listando diretórios:" # Imprime mensagem informativa
-            ls -la /home/circleci/project # Lista os arquivos e diretórios no projeto
-            if [ -d "/home/circleci/project/app1" ]; then # Verifica se o diretório app1 existe
-              cd /home/circleci/project/app1 && docker build -t ${DOCKERHUB_USER}/testdevsecopsjunto:latest . # Navega até app1 e constrói a imagem
+            ls -la  # Lista os arquivos e diretórios no projeto
+            if [ -d "app1" ]; then # Verifica se o diretório app1 existe
+              cd app1 && docker build -t ${DOCKERHUB_USER}/testdevsecopsjunto:latest . # Navega até app1 e constrói a imagem
             else
-              echo "Erro: Diretório /home/circleci/project/app1 não encontrado!" # Imprime mensagem de erro se o diretório não for encontrado
+              echo "Erro: Diretório app1 não encontrado!" # Imprime mensagem de erro se o diretório não for encontrado
               exit 1 # Sai do script com erro
             fi
       - checkout # Faz o checkout do código-fonte do repositório
@@ -28,12 +29,13 @@ jobs:
           name: Executar testes (app1) # Executa os testes unitários da aplicação app1
           command: |
             #!/bin/bash -eo pipefail # Define o shell e as opções de erro
+            cd /home/circleci/project # Navega para o diretório do projeto
             echo "Listando diretórios:" # Imprime mensagem informativa
-            ls -la /home/circleci/project # Lista os arquivos e diretórios no projeto
-            if [ -d "/home/circleci/project/app1" ]; then # Verifica se o diretório app1 existe
-              cd /home/circleci/project/app1 && npm test # Navega até app1 e executa os testes
+            ls -la  # Lista os arquivos e diretórios no projeto
+            if [ -d "app1" ]; then # Verifica se o diretório app1 existe
+              cd app1 && npm test # Navega até app1 e executa os testes
             else
-              echo "Erro: Diretório /home/circleci/project/app1 não encontrado!" # Imprime mensagem de erro se o diretório não for encontrado
+              echo "Erro: Diretório app1 não encontrado!" # Imprime mensagem de erro se o diretório não for encontrado
               exit 1 # Sai do script com erro
             fi
 
@@ -46,24 +48,26 @@ jobs:
           name: Instalar ESLint (app2) # Instala ESLint como dependência de desenvolvimento
           command: |
             #!/bin/bash -eo pipefail # Define o shell e as opções de erro
+            cd /home/circleci/project # Navega para o diretório do projeto
             echo "Listando diretórios:" # Imprime mensagem informativa
-            ls -la /home/circleci/project # Lista os arquivos e diretórios no projeto
-            if [ -d "/home/circleci/project/app2" ]; then # Verifica se o diretório app2 existe
-              cd /home/circleci/project/app2 && npm install eslint@^7 --save-dev # Navega até app2 e instala o ESLint
+            ls -la  # Lista os arquivos e diretórios no projeto
+            if [ -d "app2" ]; then # Verifica se o diretório app2 existe
+              cd app2 && npm install eslint@^7 --save-dev # Navega até app2 e instala o ESLint
             else
-              echo "Erro: Diretório /home/circleci/project/app2 não encontrado!" # Imprime mensagem de erro se o diretório não for encontrado
+              echo "Erro: Diretório app2 não encontrado!" # Imprime mensagem de erro se o diretório não for encontrado
               exit 1 # Sai do script com erro
             fi
       - run:
           name: Executar ESLint (app2) # Executa a análise de código com ESLint
           command: |
             #!/bin/bash -eo pipefail # Define o shell e as opções de erro
+            cd /home/circleci/project # Navega para o diretório do projeto
             echo "Listando diretórios:" # Imprime mensagem informativa
-            ls -la /home/circleci/project # Lista os arquivos e diretórios no projeto
-            if [ -d "/home/circleci/project/app2" ]; then # Verifica se o diretório app2 existe
-              cd /home/circleci/project/app2 && ./node_modules/.bin/eslint src/** # Navega até app2 e executa o ESLint
+            ls -la  # Lista os arquivos e diretórios no projeto
+            if [ -d "app2" ]; then # Verifica se o diretório app2 existe
+              cd app2 && ./node_modules/.bin/eslint src/** # Navega até app2 e executa o ESLint
             else
-              echo "Erro: Diretório /home/circleci/project/app2 não encontrado!" # Imprime mensagem de erro se o diretório não for encontrado
+              echo "Erro: Diretório app2 não encontrado!" # Imprime mensagem de erro se o diretório não for encontrado
               exit 1 # Sai do script com erro
             fi
       - run:
@@ -77,12 +81,13 @@ jobs:
           name: Executar SonarQube Scanner (app2) # Executa a análise SAST com o SonarQube Scanner
           command: |
             #!/bin/bash -eo pipefail # Define o shell e as opções de erro
+            cd /home/circleci/project # Navega para o diretório do projeto
             echo "Listando diretórios:" # Imprime mensagem informativa
-            ls -la /home/circleci/project # Lista os arquivos e diretórios no projeto
-            if [ -d "/home/circleci/project/app2" ]; then # Verifica se o diretório app2 existe
-              cd /home/circleci/project/app2 && sonar-scanner -Dsonar.projectKey=app2 -Dsonar.organization=$SONAR_ORGANIZATION -Dsonar.host.url=https://sonarcloud.io -Dsonar.login=$SONAR_TOKEN # Navega até app2 e executa o SonarQube Scanner
+            ls -la  # Lista os arquivos e diretórios no projeto
+            if [ -d "app2" ]; then # Verifica se o diretório app2 existe
+              cd app2 && sonar-scanner -Dsonar.projectKey=app2 -Dsonar.organization=$SONAR_ORGANIZATION -Dsonar.host.url=https://sonarcloud.io -Dsonar.login=$SONAR_TOKEN # Navega até app2 e executa o SonarQube Scanner
             else
-              echo "Erro: Diretório /home/circleci/project/app2 não encontrado!" # Imprime mensagem de erro se o diretório não for encontrado
+              echo "Erro: Diretório app2 não encontrado!" # Imprime mensagem de erro se o diretório não for encontrado
               exit 1 # Sai do script com erro
             fi
       - run:
@@ -92,12 +97,13 @@ jobs:
           name: Executar Snyk (app2) # Executa a análise de vulnerabilidades com Snyk
           command: |
             #!/bin/bash -eo pipefail # Define o shell e as opções de erro
+            cd /home/circleci/project # Navega para o diretório do projeto
             echo "Listando diretórios:" # Imprime mensagem informativa
-            ls -la /home/circleci/project # Lista os arquivos e diretórios no projeto
-            if [ -d "/home/circleci/project/app2" ]; then # Verifica se o diretório app2 existe
-              cd /home/circleci/project/app2 && snyk test --severity-threshold=high # Navega até app2 e executa o Snyk
+            ls -la  # Lista os arquivos e diretórios no projeto
+            if [ -d "app2" ]; then # Verifica se o diretório app2 existe
+              cd app2 && snyk test --severity-threshold=high # Navega até app2 e executa o Snyk
             else
-              echo "Erro: Diretório /home/circleci/project/app2 não encontrado!" # Imprime mensagem de erro se o diretório não for encontrado
+              echo "Erro: Diretório app2 não encontrado!" # Imprime mensagem de erro se o diretório não for encontrado
               exit 1 # Sai do script com erro
             fi
 
@@ -111,12 +117,13 @@ jobs:
           name: Construir imagem Docker (app1) # Constrói a imagem Docker com a tag 'app1'
           command: |
             #!/bin/bash -eo pipefail # Define o shell e as opções de erro
+            cd /home/circleci/project # Navega para o diretório do projeto
             echo "Listando diretórios:" # Imprime mensagem informativa
-            ls -la /home/circleci/project # Lista os arquivos e diretórios no projeto
-            if [ -d "/home/circleci/project/app1" ]; then # Verifica se o diretório app1 existe
-              cd /home/circleci/project/app1 && docker build -t app1 . # Navega até app1 e constrói a imagem
+            ls -la  # Lista os arquivos e diretórios no projeto
+            if [ -d "app1" ]; then # Verifica se o diretório app1 existe
+              cd app1 && docker build -t app1 . # Navega até app1 e constrói a imagem
             else
-              echo "Erro: Diretório /home/circleci/project/app1 não encontrado!" # Imprime mensagem de erro se o diretório não for encontrado
+              echo "Erro: Diretório app1 não encontrado!" # Imprime mensagem de erro se o diretório não for encontrado
               exit 1 # Sai do script com erro
             fi
       - run:
@@ -144,14 +151,15 @@ jobs:
           name: Construir e enviar imagem Docker (app1) # Constrói e envia a imagem Docker para o Docker Hub
           command: |
             #!/bin/bash -eo pipefail # Define o shell e as opções de erro
+            cd /home/circleci/project # Navega para o diretório do projeto
             echo "Listando diretórios:" # Imprime mensagem informativa
-            ls -la /home/circleci/project # Lista os arquivos e diretórios no projeto
-            if [ -d "/home/circleci/project/app1" ]; then # Verifica se o diretório app1 existe
-              cd /home/circleci/project/app1 && docker build -t ${DOCKERHUB_USER}/testdevsecopsjunto:latest . # Navega até app1 e constrói a imagem
+            ls -la # Lista os arquivos e diretórios no projeto
+            if [ -d "app1" ]; then # Verifica se o diretório app1 existe
+              cd app1 && docker build -t ${DOCKERHUB_USER}/testdevsecopsjunto:latest . # Navega até app1 e constrói a imagem
               echo $DOCKERHUB_PASSWORD | docker login -u $DOCKERHUB_USER --password-stdin # Faz login no Docker Hub
               docker push ${DOCKERHUB_USER}/testdevsecopsjunto:latest # Envia a imagem para o Docker Hub
             else
-              echo "Erro: Diretório /home/circleci/project/app1 não encontrado!" # Imprime mensagem de erro se o diretório não for encontrado
+              echo "Erro: Diretório app1 não encontrado!" # Imprime mensagem de erro se o diretório não for encontrado
               exit 1 # Sai do script com erro
             fi
       - run:
