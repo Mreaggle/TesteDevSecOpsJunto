@@ -153,7 +153,7 @@ jobs:
             #!/bin/bash -eo pipefail # Define o shell e as opções de erro
             cd /home/circleci/project # Navega para o diretório do projeto
             echo "Listando diretórios:" # Imprime mensagem informativa
-            ls -la # Lista os arquivos e diretórios no projeto
+            ls -la  # Lista os arquivos e diretórios no projeto
             if [ -d "app1" ]; then # Verifica se o diretório app1 existe
               cd app1 && docker build -t ${DOCKERHUB_USER}/testdevsecopsjunto:latest . # Navega até app1 e constrói a imagem
               echo $DOCKERHUB_PASSWORD | docker login -u $DOCKERHUB_USER --password-stdin # Faz login no Docker Hub
