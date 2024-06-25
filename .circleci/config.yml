@@ -5,6 +5,9 @@ jobs:
     docker:
       - image: circleci/node:18 # Imagem Node.js 18.12.0 no CircleCI para consistência com o Dockerfile
     steps:
+      - run:
+          name: Executar comando Docker
+          command: docker build -t docker.io/testdevsecopsjunto:latest .
       - checkout # Faz o checkout do código-fonte do repositório
 
   test-app1:
@@ -81,7 +84,7 @@ jobs:
             aws configure set default.region $AWS_DEFAULT_REGION # Define a região padrão da AWS
       - run:
           name: Deploy da aplicação app1
-          command: aws ecs update-service --cluster TesteDevSecOpsJunto --service testedevsecops --force-new-deployment # Atualiza o serviço no ECS forçando um novo deploy
+          command: aws ecs update-service --cluster TesteDevSecOpsJunto --service testedevsecops --force-new-deployment --container-image testdevsecopsjunto # Atualiza o serviço no ECS forçando um novo deploy
 
 # Define o workflow para executar os jobs sequencialmente
 workflows:
