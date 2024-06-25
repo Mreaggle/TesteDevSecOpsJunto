@@ -77,12 +77,14 @@ jobs:
               echo "Erro: Diretório app2 não encontrado!" # Imprime mensagem de erro se o diretório não for encontrado
               exit 1 # Sai do script com erro
             fi
+    steps:
       - run:
           name: Instalar SonarQube Scanner
           command: |
             wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-6.0.0.4432-linux.zip
-            sudo unzip sonar-scanner-6.0.0.4432-linux.zip
-            sudo mv sonar-scanner-6.0.0.4432-linux.zip /opt/sonar-scanner
+            mv sonar-scanner-cli-6.0.0.4432-linux.zip sonarqube.zip # Renomeia o arquivo ZIP
+            unzip sonarqube.zip # Descompacta o arquivo com o novo nome
+            sudo mv sonar-scanner-6.0.0.4432-linux /opt/sonar-scanner 
             sudo ln -s /opt/sonar-scanner/bin/sonar-scanner /usr/local/bin/sonar-scanner
       - run:
           name: Executar SonarQube Scanner (app2) # Executa a análise SAST com o SonarQube Scanner
