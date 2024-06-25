@@ -5,7 +5,7 @@ jobs:
     docker:
       - image: cimg/node:18.12.0 # Imagem Node.js 18.12.0 next-gen
     steps:
-        - run:
+      - run:
           name: Executar comando Docker # Constrói a imagem Docker com a tag especificada no Docker Hub
           command: |
             /home/circleci/project/app1
