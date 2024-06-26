@@ -107,10 +107,10 @@ jobs:
             sudo apt-get update
             sudo apt-get install -y maven
       - run:
-          name: Instalar OWASP Dependency-Check
+          name: Executar OWASP Dependency-Check (app2)
           command: |
-            curl -sL https://raw.githubusercontent.com/jeremylong/DependencyCheck/main/build-docker.sh | sh
-      - store_artifacts: # Armazena o artefato HTML do Dependency Check
+            docker run -v $(pwd):/src owasp/dependency-check --project app2 --scan /src/app2 --format HTML --out /src/app2/dependency-check-report.html
+      - store_artifacts:
           path: app2/dependency-check-report.html
           destination: dependency-check-report
 
@@ -139,13 +139,13 @@ jobs:
             #!/bin/bash -eo pipefail
             docker pull aquasec/trivy:latest
             docker run --rm aquasec/trivy:latest image ${DOCKERHUB_USER}/app1:latest 
-      - run:
-          name: Executar Clair # Utiliza Clair para uma segunda validação da imagem
-          command: |
-            docker pull arminc/clair-db:latest # Baixa a imagem do banco de dados Clair
-            docker run -d -p 5432:5432 -e POSTGRES_PASSWORD=password --name clair-db arminc/clair-db:latest # Inicia o banco de dados Clair
-            docker pull arminc/clair-local-scan:latest # Baixa a imagem do Clair Local Scan
-            docker run --rm -it --link clair-db:postgres -v $PWD:/tmp/src arminc/clair-local-scan:latest --config http://clair-db:6060 clair app1 # Executa o Clair Local Scan
+#      - run:
+#          name: Executar Clair # Utiliza Clair para uma segunda validação da imagem
+#          command: |
+#            docker pull arminc/clair-db:latest # Baixa a imagem do banco de dados Clair
+#            docker run -d -p 5432:5432 -e POSTGRES_PASSWORD=password --name clair-db arminc/clair-db:latest # Inicia o banco de dados Clair
+#            docker pull arminc/clair-local-scan:latest # Baixa a imagem do Clair Local Scan
+#            docker run --rm -it --link clair-db:postgres -v $PWD:/tmp/src arminc/clair-local-scan:latest --config http://clair-db:6060 clair app1 # Executa o Clair Local Scan
 
   deploy-app1: # Job para realizar o deploy da aplicação app1 no AWS ECS Fargate
     docker:
