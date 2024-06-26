@@ -98,22 +98,23 @@ jobs:
               exit 1
             fi
       - run:
-          name: Instalar Snyk # Instala Snyk para análise de vulnerabilidades
-          command: npm install -g snyk
-      - run:
-          name: Executar Snyk (app2) # Executa a análise de vulnerabilidades com Snyk
+          name: Instalar OWASP Dependency-Check # Instala o OWASP Dependency-Check
           command: |
-            #!/bin/bash -eo pipefail # Define o shell e as opções de erro
-            echo "Listando diretórios:" # Imprime mensagem informativa
-            ls -la  # Lista os arquivos e diretórios no projeto
-            if [ -d "app2" ]; then # Verifica se o diretório app2 existe
-              cd app2 && snyk test --severity-threshold=high # Navega até app2 e executa o Snyk
+            curl -sL https://raw.githubusercontent.com/jeremylong/DependencyCheck/main/build/install.sh | sh
+      - run:
+          name: Executar OWASP Dependency-Check (app2) # Executa a análise com OWASP Dependency-Check
+          command: |
+            #!/bin/bash -eo pipefail
+            echo "Listando diretórios:"
+            ls -la
+            if [ -d "app2" ]; then
+              cd app2 && dependency-check.sh --project app2 --scan ./ --format HTML --out ./dependency-check-report.html
             else
-              echo "Erro: Diretório app2 não encontrado!" # Imprime mensagem de erro se o diretório não for encontrado
-              exit 1 # Sai do script com erro
+              echo "Erro: Diretório app2 não encontrado!"
+              exit 1
             fi
 
-  scan-docker-app1: # Job para realizar análise de segurança da imagem Docker da app1
+    scan-docker-app1: # Job para realizar análise de segurança da imagem Docker da app1
     docker:
       - image: cimg/node:18.12.0
     working_directory: ~/project
@@ -137,15 +138,14 @@ jobs:
           command: |
             #!/bin/bash -eo pipefail
             docker pull aquasec/trivy:latest
-            docker run -it -d --rm aquasec/trivy:latest image app1
+            docker run --rm aquasec/trivy:latest image app1
       - run:
           name: Executar Clair (app1) # Utiliza Clair para uma segunda validação da imagem
           command: |
-            docker pull arminc/clair-local-scan:latest
-            docker run -d --name db arminc/clair-db:2017-03-15
-            docker pull arminc/clair-local-scan:latest
-            docker run -d -p 5432:5432 -e POSTGRES_PASSWORD=password --name db postgres:latest
-            docker run --rm -it --link db:postgres -v $PWD:/tmp/src arminc/clair-local-scan:latest clair-db:postgres clair:http://clair:6060 /tmp/src app1
+            docker pull arminc/clair-db:latest # Baixa a imagem do banco de dados Clair
+            docker run -d -p 5432:5432 -e POSTGRES_PASSWORD=password --name clair-db arminc/clair-db:latest # Inicia o banco de dados Clair (nome alterado para 'clair-db')
+            docker pull arminc/clair-local-scan:latest # Baixa a imagem do Clair Local Scan
+            docker run --rm -it --link clair-db:postgres -v $PWD:/tmp/src arminc/clair-local-scan:latest -c http://clair-db:6060 -i app1 # Executa o Clair Local Scan
 
   deploy-app1: # Job para realizar o deploy da aplicação app1 no AWS ECS Fargate
     docker:

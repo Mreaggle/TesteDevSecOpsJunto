@@ -1,0 +1,41 @@
+{
+  "containerDefinitions": [
+    {
+      "name": "app1",  # Nome do seu container
+      "image": "${DOCKERHUB_USER}/testdevsecopsjunto:latest", # Imagem Docker (substitua com seu usuário e nome da imagem)
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 3000, # Porta que sua aplicação escuta dentro do container
+          "hostPort": 3000,
+          "protocol": "tcp"
+        }
+      ],
+      "environment": [
+        {
+          "name": "AWS_ACCESS_KEY_ID",
+          "value": "$AWS_ACCESS_KEY_ID"
+        },
+        {
+          "name": "AWS_SECRET_ACCESS_KEY",
+          "value": "$AWS_SECRET_ACCESS_KEY"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/testedevsecops",  # Nome do grupo de logs do CloudWatch
+          "awslogs-region": "$AWS_DEFAULT_REGION",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    }
+  ],
+  "family": "testedevsecops", # Nome da família da task definition
+  "cpu": "256", # Recursos de CPU (em unidades)
+  "memory": "512", # Recursos de memória (em MB)
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": [
+    "FARGATE"
+  ]
+}
