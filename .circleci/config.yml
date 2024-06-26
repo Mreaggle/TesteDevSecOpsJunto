@@ -100,7 +100,7 @@ jobs:
       - run:
           name: Instalar OWASP Dependency-Check # Instala o OWASP Dependency-Check
           command: |
-            curl -sL https://raw.githubusercontent.com/jeremylong/DependencyCheck/main/build/install.sh | sh
+            curl -sL https://raw.githubusercontent.com/jeremylong/DependencyCheck/main/build-docker.sh | sh
       - run:
           name: Executar OWASP Dependency-Check (app2)
           command: |
