@@ -92,6 +92,9 @@ jobs:
             sudo mv sonar-scanner-6.0.0.4432-linux /opt/sonar-scanner
             sudo ln -s /opt/sonar-scanner/bin/sonar-scanner /usr/local/bin/sonar-scanner
       - run:
+          name: Criar diretório e arquivo de resultados do SonarQube
+          command: mkdir -p scan-results/app2 && touch scan-results/app2/sonarqube-report.txt  # Cria o diretório e o arquivo
+      - run:
           name: Executar SonarQube Scanner # Executa a análise com o SonarScanner e salva a saída em um arquivo
           command: |
             #!/bin/bash -eo pipefail
