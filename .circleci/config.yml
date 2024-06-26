@@ -1,4 +1,4 @@
-version: 2.1
+version: 4.4.4
 
 jobs:
   checkout: # Job para realizar o checkout do código e construir a imagem Docker
