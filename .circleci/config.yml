@@ -120,6 +120,9 @@ jobs:
           name: Executar OWASP Dependency-Check (app2)
           command: |
             docker run -v $(pwd)/app2:/src ${DOCKERHUB_USER}/dependency-check:custom --project app2 --scan . --format HTML --out ./dependency-check-report.html 
+      - run: # Adicionando ls para depuração
+          name: Listar arquivos em app2
+          command: ls -la app2
       - store_artifacts:
           path: app2/dependency-check-report.html
 
@@ -181,6 +184,13 @@ jobs:
               echo "Erro: Diretório app1 não encontrado!" 
               exit 1 
             fi
+      - run:
+          name: Imprimir task definition
+          command: cat ecs_task_definition.json
+      - run:
+          name: Atualizar task definition com nova imagem
+          command: |
+            aws ecs register-task-definition --cli-input-json file://ecs_task_definition.json --family testedevsecops
       - run:
           name: Atualizar task definition com nova imagem # Atualiza a task definition no ECS
           command: |
