@@ -159,7 +159,7 @@ jobs:
       - store_artifacts:  # Salva o relatório do Trivy como artefato
           path: scan-results/trivy-report.txt # Caminho relativo ao diretório de trabalho
 
-    deploy-app1:
+  deploy-app1:
     docker:
       - image: cimg/aws:2022.06.1
     working_directory: ~/project
