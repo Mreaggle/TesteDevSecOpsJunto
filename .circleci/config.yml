@@ -188,26 +188,21 @@ jobs:
 
 # Workflows: Define os fluxos de trabalho do pipeline
 workflows:
-  app1-workflow: # Workflow para a aplicação app1
+  build_and_deploy:
     jobs:
-      - checkout:
-          filters:
-            branches:
-              only: main # Executa o checkout apenas na branch 'main'
-      - test-app1:
+      - checkout # Executa o job 'checkout' primeiro
+      - test-app1: 
           requires:
-            - checkout # Executa 'test-app1' após 'checkout'
-      - scan-docker-app1:
+            - checkout
+      - scan-app-app2: 
           requires:
-            - checkout # Executa 'scan-docker-app1' após 'checkout'
-      - deploy-app1:
+            - checkout
+      - scan-docker-app1: 
           requires:
-            - test-app1 # Executa 'deploy-app1' após 'test-app1'
-            - scan-docker-app1 # Executa 'deploy-app1' após 'scan-docker-app1'
-
-  app2-workflow: # Workflow para a aplicação app2
-    jobs:
-      - scan-app-app2:
-          filters:
-            branches:
-              only: main # Executa 'scan-app-app2' apenas na branch 'main'
+            - checkout
+      - deploy-app1: 
+          requires:
+            - test-app1
+            - scan-app-app2
+            - scan-docker-app1
+            - scan-docker-app1              
