@@ -50,8 +50,8 @@ jobs:
               exit 1
             fi
       - store_artifacts:  # Salva o relatório de testes como artefato
-          path: app1/test-report.txt
-          destination: artifacts/test-report
+          path: app1/test-report.txt # Caminho relativo ao diretório de trabalho
+          destination: artifacts/test-report # Diretório de destino no CircleCI
 
   scan-app-app2: # Job para realizar análise estática de segurança da aplicação app2
     docker:
@@ -125,8 +125,8 @@ jobs:
           command: |
             docker run -v /home/circleci/project:/src ${DOCKERHUB_USER}/dependency-check:custom --project app2 --scan . --format HTML --out ./dependency-check-report.html # Mudança: scan "."
       - store_artifacts:
-          path: app2/dependency-check-report.html
-          destination: artifacts/dependency-check-report
+          path: app2/dependency-check-report.html # Caminho relativo ao diretório de trabalho
+          destination: artifacts/dependency-check-report # Diretório de destino no CircleCI
 
   scan-docker-app1: # Job para realizar análise de segurança da imagem Docker da app1
     docker:
@@ -142,7 +142,7 @@ jobs:
             echo "Listando diretórios:"
             ls -la
             if [ -d "app1" ]; then
-              cd app1 && docker build -t app1 .
+              cd app1 && docker build -t ${DOCKERHUB_USER}/testdevsecopsjunto:latest .
             else
               echo "Erro: Diretório app1 não encontrado!"
               exit 1
@@ -152,18 +152,10 @@ jobs:
           command: |
             #!/bin/bash -eo pipefail
             docker pull aquasec/trivy:latest
-            docker run --rm aquasec/trivy:latest image ${DOCKERHUB_USER}/app1:latest > trivy-report.txt # Redireciona a saída para um arquivo
+            docker run --rm aquasec/trivy:latest image ${DOCKERHUB_USER}/testdevsecopsjunto:latest > trivy-report.txt # Redireciona a saída para um arquivo e usa a tag correta
       - store_artifacts:  # Salva o relatório do Trivy como artefato
-          path: trivy-report.txt
-          destination: artifacts/trivy-report
-
-#      - run:
-#          name: Executar Clair # Utiliza Clair para uma segunda validação da imagem
-#          command: |
-#            docker pull arminc/clair-db:latest # Baixa a imagem do banco de dados Clair
-#            docker run -d -p 5432:5432 -e POSTGRES_PASSWORD=password --name clair-db arminc/clair-db:latest # Inicia o banco de dados Clair
-#            docker pull arminc/clair-local-scan:latest # Baixa a imagem do Clair Local Scan
-#            docker run --rm -it --link clair-db:postgres -v $PWD:/tmp/src arminc/clair-local-scan:latest --config http://clair-db:6060 clair app1 # Executa o Clair Local Scan
+          path: trivy-report.txt # Caminho relativo ao diretório de trabalho
+          destination: artifacts/trivy-report # Diretório de destino no CircleCI
 
   deploy-app1: # Job para realizar o deploy da aplicação app1 no AWS ECS Fargate
     docker:
@@ -222,4 +214,3 @@ workflows:
             - test-app1
             - scan-app-app2
             - scan-docker-app1
-            
