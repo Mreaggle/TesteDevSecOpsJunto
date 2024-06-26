@@ -16,9 +16,6 @@ jobs:
       - setup_remote_docker
       - checkout # Faz o checkout do código-fonte do repositório
       - run:
-          name: Criar pasta de artefatos
-          command: mkdir artifacts
-      - run:
           name: Executar comando Docker # Constrói a imagem Docker
           command: |
             #!/bin/bash -eo pipefail
@@ -51,7 +48,6 @@ jobs:
             fi
       - store_artifacts:  # Salva o relatório de testes como artefato
           path: app1/test-report.txt # Caminho relativo ao diretório de trabalho
-          destination: artifacts/test-report # Diretório de destino no CircleCI
 
   scan-app-app2: # Job para realizar análise estática de segurança da aplicação app2
     docker:
@@ -126,7 +122,6 @@ jobs:
             docker run -v /home/circleci/project:/src ${DOCKERHUB_USER}/dependency-check:custom --project app2 --scan . --format HTML --out ./dependency-check-report.html # Mudança: scan "."
       - store_artifacts:
           path: app2/dependency-check-report.html # Caminho relativo ao diretório de trabalho
-          destination: artifacts/dependency-check-report # Diretório de destino no CircleCI
 
   scan-docker-app1: # Job para realizar análise de segurança da imagem Docker da app1
     docker:
@@ -156,14 +151,6 @@ jobs:
             
       - store_artifacts:  # Salva o relatório do Trivy como artefato
           path: trivy-report.txt # Caminho relativo ao diretório de trabalho
-          destination: artifacts/trivy-report # Diretório de destino no CircleCI
-#- run:
-#name: Executar Clair # Utiliza Clair para uma segunda validação da imagem
-#command: |
-#docker pull arminc/clair-db:latest # Baixa a imagem do banco de dados Clair
-#docker run -d -p 5432:5432 -e POSTGRES_PASSWORD=password --name clair-db #arminc/clair-db:latest # Inicia o banco de dados Clair
-#docker pull arminc/clair-local-scan:latest # Baixa a imagem do Clair Local Scan
-#docker run --rm -it --link clair-db:postgres -v $PWD:/tmp/src arminc/clair-local-scan:latest --config http://clair-db:6060 clair app1 # RETIRADO Executa o Clair Local Scan
 
   deploy-app1: # Job para realizar o deploy da aplicação app1 no AWS ECS Fargate
     docker:
