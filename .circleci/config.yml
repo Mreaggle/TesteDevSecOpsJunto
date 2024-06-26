@@ -148,11 +148,11 @@ jobs:
               exit 1
             fi
       - run:
-          name: Executar Trivy # Executa Trivy para analisar a imagem 'app1'
+          name: Executar Trivy
           command: |
             #!/bin/bash -eo pipefail
             docker pull aquasec/trivy:latest
-            docker run --rm aquasec/trivy:latest image app1 > trivy-report.txt
+            docker run --rm aquasec/trivy:latest image ${DOCKERHUB_USER}/testdevsecopsjunto:latest > trivy-report.txt
             
       - store_artifacts:  # Salva o relatório do Trivy como artefato
           path: trivy-report.txt # Caminho relativo ao diretório de trabalho
