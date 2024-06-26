@@ -181,8 +181,8 @@ jobs:
           command: |
             aws ecs register-task-definition --cli-input-json file://ecs_task_definition.json --family testedevsecops
       - run:
-        name: Deploy da aplicação app1
-        command: |
+          name: Deploy da aplicação app1
+          command: |
             aws ecs update-service \
             --cluster TesteDevSecOpsJunto \
             --service testedevsecops \
