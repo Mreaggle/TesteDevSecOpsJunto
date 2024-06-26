@@ -184,10 +184,13 @@ jobs:
       - run:
           name: Imprimir task definition
           command: cat ecs_task_definition.json
-      - aws-ecs/deploy-service-update: # Utiliza a orb aws-ecs para deploy
-          cluster: "TesteDevSecOpsJunto"
-          family: "testedevsecops"
-          container-image-name-updates: 'app1=app1,tag=${CIRCLE_SHA1}'
+      - run:
+          name: Atualizar task definition com nova imagem
+          command: |
+            aws ecs register-task-definition --cli-input-json file://ecs_task_definition.json --family testedevsecops 
+      - run:
+          name: Deploy da aplicação app1
+          command: aws ecs update-service --cluster TesteDevSecOpsJunto --service testedevsecops --force-new-deployment
 
 # Define o workflow para executar os jobs sequencialmente
 workflows:
