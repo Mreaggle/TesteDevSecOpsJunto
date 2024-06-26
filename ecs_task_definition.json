@@ -1,31 +1,19 @@
 {
-  "family": "testedevsecops",
-  "cpu": "256",
-  "memory": "512",
-  "networkMode": "awsvpc",
-  "requiresCompatibilities": [
-    "FARGATE"
-  ],
+  "ipcMode": null,
+  "executionRoleArn": "arn:aws:iam::058264068878:role/ecsTaskExecutionRole",
   "containerDefinitions": [
     {
-      "name": "app1",
-      "image": "docker.io/${DOCKERHUB_USER}/testdevsecopsjunto:latest",
+      "name": "TesteDevSecOpsJunto",
+      "image": "${DOCKERHUB_USER}/testdevsecopsjunto:latest",
+      "cpu": 0,
+      "memory": null,
+      "memoryReservation": 128,
       "essential": true,
       "portMappings": [
         {
-          "containerPort": 3000,
-          "hostPort": 3000,
-          "protocol": "tcp"
-        }
-      ],
-      "environment": [
-        {
-          "name": "AWS_ACCESS_KEY_ID",
-          "value": "$AWS_ACCESS_KEY_ID"
-        },
-        {
-          "name": "AWS_SECRET_ACCESS_KEY",
-          "value": "$AWS_SECRET_ACCESS_KEY"
+          "hostPort": 0,
+          "protocol": "tcp",
+          "containerPort": 3000
         }
       ],
       "logConfiguration": {
@@ -37,5 +25,17 @@
         }
       }
     }
-  ]
+  ],
+  "placementConstraints": [],
+  "memory": "2048",
+  "compatibilities": [
+    "EC2",
+    "FARGATE"
+  ],
+  "family": "testedevsecops",
+  "requiresCompatibilities": [
+    "FARGATE"
+  ],
+  "networkMode": "awsvpc",
+  "cpu": "1024"
 }
