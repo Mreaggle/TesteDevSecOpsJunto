@@ -109,9 +109,13 @@ jobs:
             exit 1
             fi
       - run:
+          name: Construir imagem Dependency-Check customizada
+          command: docker build -t dependency-check:custom -f Dockerfile.dependencycheck .
+      - run:
           name: Executar OWASP Dependency-Check (app2)
           command: |
-            docker run -v /home/circleci/project:/src owasp/dependency-check --project app2 --scan /src/app2 --format HTML --out /src/app2/dependency-check-report.html  # Alterado o mapeamento do volume
+            docker pull owasp/dependency-check:custom
+            docker run -v /home/circleci/project:/src dependency-check:custom --project app2 --scan /src/app2 --format HTML --out /src/app2/dependency-check-report.html
       - store_artifacts:
           path: app2/dependency-check-report.html
           destination: dependency-check-report
