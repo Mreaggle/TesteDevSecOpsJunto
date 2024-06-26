@@ -117,7 +117,7 @@ jobs:
           path: app2/dependency-check-report.html
           destination: dependency-check-report
 
-    scan-docker-app1: # Job para realizar análise de segurança da imagem Docker da app1
+  scan-docker-app1: # Job para realizar análise de segurança da imagem Docker da app1
     docker:
       - image: cimg/node:18.12.0
     working_directory: ~/project
