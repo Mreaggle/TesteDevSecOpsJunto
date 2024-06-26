@@ -26,8 +26,8 @@ jobs:
     steps:
       - checkout # Faz o checkout do código-fonte do repositório
       - run:
-          name: Criar diretório de resultados de testes
-          command: mkdir -p test-results # Cria o diretório test-results
+          name: Criar diretório e arquivo de resultados de testes
+          command: mkdir -p test-results && touch test-results/test-report.txt # Cria o diretório e o arquivo
       - run:
           name: Executar testes # Executa os testes unitários da aplicação app1
           command: |
@@ -35,7 +35,7 @@ jobs:
             echo "Listando diretórios:"
             ls -la
             if [ -d "app1" ]; then
-              cd app1 && npm test > test-results/test-report.txt # Redireciona a saída para um arquivo dentro da pasta test-results
+              cd app1 && npm test > test-results/test-report.txt # Redireciona a saída para o arquivo
             else
               echo "Erro: Diretório app1 não encontrado!"
               exit 1
@@ -53,19 +53,19 @@ jobs:
       - checkout # Faz o checkout do código-fonte do repositório
       - setup_remote_docker
       - run:
-          name: Criar diretório de resultados
-          command: mkdir -p scan-results/app2
+          name: Criar diretório e arquivo de resultados do ESLint
+          command: mkdir -p scan-results/app2 && touch scan-results/app2/eslint-report.txt  # Cria o diretório e o arquivo
       - run:
-          name: Instalar ESLint # Instala ESLint 
+          name: Executar ESLint # Executa a análise de código com ESLint e salva a saída em um arquivo
           command: |
-            #!/bin/bash -eo pipefail
-            echo "Listando diretórios:"
-            ls -la
-            if [ -d "app2" ]; then
-              cd app2 && npm install eslint@^7 --save-dev 
+            #!/bin/bash -eo pipefail 
+            echo "Listando diretórios:" 
+            ls -la  
+            if [ -d "app2" ]; then 
+              cd app2 && ./node_modules/.bin/eslint src/** --fix > scan-results/app2/eslint-report.txt
             else
-              echo "Erro: Diretório app2 não encontrado!"
-              exit 1
+              echo "Erro: Diretório app2 não encontrado!" 
+              exit 1 
             fi
       - run:
           name: Executar ESLint # Executa a análise de código com ESLint e salva a saída em um arquivo
