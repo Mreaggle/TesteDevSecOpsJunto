@@ -116,29 +116,30 @@ jobs:
   scan-docker-app1: # Job para realizar análise de segurança da imagem Docker da app1
     docker:
       - image: cimg/node:18.12.0
-    working_directory: ~/project # Define o diretório de trabalho para /home/circleci/project
+    working_directory: ~/project
     steps:
       - checkout # Faz o checkout do código-fonte do repositório
       - setup_remote_docker # Configura um ambiente Docker remoto
       - run:
           name: Construir imagem Docker (app1) # Constrói a imagem Docker com a tag 'app1'
           command: |
-            #!/bin/bash -eo pipefail # Define o shell e as opções de erro
-            echo "Listando diretórios:" # Imprime mensagem informativa
-            ls -la  # Lista os arquivos e diretórios no projeto
-            if [ -d "app1" ]; then # Verifica se o diretório app1 existe
-              cd app1 && docker build -t app1 . # Navega até app1 e constrói a imagem
+            #!/bin/bash -eo pipefail
+            echo "Listando diretórios:"
+            ls -la
+            if [ -d "app1" ]; then
+              cd app1 && docker build -t app1 .
             else
-              echo "Erro: Diretório app1 não encontrado!" # Imprime mensagem de erro se o diretório não for encontrado
-              exit 1 # Sai do script com erro
+              echo "Erro: Diretório app1 não encontrado!"
+              exit 1
             fi
       - run:
-          name: Executar Trivy (app1) # Executa Trivy para analisar a imagem 'app1' em busca de vulnerabilidades
-          command: | 
+          name: Executar Trivy (app1) # Executa Trivy para analisar a imagem 'app1'
+          command: |
+            #!/bin/bash -eo pipefail
             docker pull aquasec/trivy:latest
             docker run --rm aquasec/trivy:latest image app1
       - run:
-          name: Executar Clair (app1) # Utiliza Clair para uma segunda validação da imagem, complementando o Trivy
+          name: Executar Clair (app1) # Utiliza Clair para uma segunda validação da imagem
           command: |
             docker pull arminc/clair-scanner:latest
             docker run -d -p 5432:5432 -e POSTGRES_PASSWORD=password --name db postgres:latest
