@@ -119,9 +119,9 @@ jobs:
       - run:
           name: Executar OWASP Dependency-Check (app2)
           command: |
-            docker run -v /home/circleci/project:/src ${DOCKERHUB_USER}/dependency-check:custom --project app2 --scan . --format HTML --out ./dependency-check-report.html # Mudança: scan "."
+            docker run -v $(pwd)/app2:/src ${DOCKERHUB_USER}/dependency-check:custom --project app2 --scan . --format HTML --out ./dependency-check-report.html 
       - store_artifacts:
-          path: app2/dependency-check-report.html # Caminho relativo ao diretório de trabalho
+          path: app2/dependency-check-report.html
 
   scan-docker-app1: # Job para realizar análise de segurança da imagem Docker da app1
     docker:
