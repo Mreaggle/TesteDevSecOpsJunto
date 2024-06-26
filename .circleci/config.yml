@@ -102,12 +102,12 @@ jobs:
               exit 1
             fi
       - run:
-        name: Verificar diretório app2
-        command: |
-          if [ ! -d "app2" ]; then
+          name: Verificar diretório app2
+          command: |
+            if [ ! -d "app2" ]; then
             echo "Erro: Diretório app2 não encontrado!"
             exit 1
-          fi
+            fi
       - run:
           name: Executar OWASP Dependency-Check (app2)
           command: |
