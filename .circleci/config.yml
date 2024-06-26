@@ -165,6 +165,9 @@ jobs:
   deploy-app1: # Job para realizar o deploy da aplicação app1 no AWS ECS Fargate
     docker:
       - image: cimg/amazonlinux2:2018.03 # Imagem compatível com AWS CLI
+    auth:  # Adicione este bloco de autenticação
+      username: $DOCKERHUB_USER
+      password: $DOCKERHUB_PASSWORD
     working_directory: ~/project 
     steps:
       - checkout # Faz o checkout do código-fonte do repositório
