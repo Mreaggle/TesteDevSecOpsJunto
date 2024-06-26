@@ -114,7 +114,7 @@ jobs:
       - run:
           name: Executar OWASP Dependency-Check (app2)
           command: |
-            docker pull owasp/dependency-check:custom
+            docker pull dependency-check:custom
             docker run -v /home/circleci/project:/src dependency-check:custom --project app2 --scan /src/app2 --format HTML --out /src/app2/dependency-check-report.html
       - store_artifacts:
           path: app2/dependency-check-report.html
