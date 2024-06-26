@@ -167,7 +167,7 @@ jobs:
 
   deploy-app1: # Job para realizar o deploy da aplicação app1 no AWS ECS Fargate
     docker:
-      - image: cimg/aws:latest # Imagem atualizada
+      - image: cimg/aws:2022.06.1 # Imagem atualizada
     working_directory: ~/project 
     steps:
       - checkout # Faz o checkout do código-fonte do repositório
