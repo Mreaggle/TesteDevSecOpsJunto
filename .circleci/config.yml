@@ -48,7 +48,7 @@ jobs:
             fi
 
   scan-app-app2: # Job para realizar análise estática de segurança da aplicação app2
-    docker:  # Adicione a chave 'docker:' aqui
+    docker:
       - image: cimg/node:18.12.0
     working_directory: ~/project # Define o diretório de trabalho para /home/circleci/project
     steps: # Remova a repetição de 'steps:' aqui
