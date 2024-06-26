@@ -1,12 +1,12 @@
 {
   "containerDefinitions": [
     {
-      "name": "app1",  # Nome do seu container
-      "image": "${DOCKERHUB_USER}/testdevsecopsjunto:latest", # Imagem Docker (substitua com seu usuário e nome da imagem)
+      "name": "app1",
+      "image": "${DOCKERHUB_USER}/testdevsecopsjunto:latest",
       "essential": true,
       "portMappings": [
         {
-          "containerPort": 3000, # Porta que sua aplicação escuta dentro do container
+          "containerPort": 3000,
           "hostPort": 3000,
           "protocol": "tcp"
         }
@@ -24,16 +24,16 @@
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {
-          "awslogs-group": "/ecs/testedevsecops",  # Nome do grupo de logs do CloudWatch
+          "awslogs-group": "/ecs/testedevsecops",
           "awslogs-region": "$AWS_DEFAULT_REGION",
           "awslogs-stream-prefix": "ecs"
         }
       }
     }
   ],
-  "family": "testedevsecops", # Nome da família da task definition
-  "cpu": "256", # Recursos de CPU (em unidades)
-  "memory": "512", # Recursos de memória (em MB)
+  "family": "testedevsecops",
+  "cpu": "256",
+  "memory": "512",
   "networkMode": "awsvpc",
   "requiresCompatibilities": [
     "FARGATE"
