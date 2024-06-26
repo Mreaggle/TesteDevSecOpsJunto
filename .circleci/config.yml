@@ -57,6 +57,10 @@ jobs:
           command: mkdir -p scan-results/app2 && touch app2/eslint-report.json  # Cria o arquivo dentro de app2
       
       - run:
+          name: Criar diretório de resultados do ESLint
+          command: mkdir -p scan-results/app2 && touch app2/eslint-report.json  # Cria o arquivo dentro de app2
+      
+      - run:
           name: Instalar ESLint # Instala ESLint 
           command: |
             #!/bin/bash -eo pipefail
@@ -72,13 +76,16 @@ jobs:
           name: Listar arquivos em node_modules/.bin
           command: ls -la app2/node_modules/.bin
       - run:
+          name: Dar permissão de escrita ao diretório app2 # Adiciona permissões de escrita
+          command: chmod -R u+w app2
+      - run:
           name: Executar ESLint # Executa a análise de código com ESLint e salva a saída em um arquivo
           command: |
             #!/bin/bash -eo pipefail 
             echo "Listando diretórios:" 
             ls -la  
             if [ -d "app2" ]; then 
-              cd app2 && ./node_modules/.bin/eslint src/** --fix --format json > ./eslint-report.json # Salva o relatório dentro de app2
+              cd app2 && npx eslint src/** --fix --format json > ./eslint-report.json # Usa npx e salva o relatório dentro de app2
             else
               echo "Erro: Diretório app2 não encontrado!" 
               exit 1 
@@ -179,14 +186,13 @@ jobs:
           name: Construir e enviar imagem Docker (app1)
           command: |
             $(aws ecr get-login --no-include-email)
-            docker build -t $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/testdevsecopsjunto:latest .
-            docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/testdevsecopsjunto:latest
+            docker build -t ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/testdevsecopsjunto:latest .
+            docker push ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/testdevsecopsjunto:latest
 
       # Registra a nova definição de tarefa ECS
       - run:
           name: Atualizar task definition com nova imagem
           command: |
-            sed -i "s|$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/testdevsecopsjunto:latest|058264068878.dkr.ecr.us-east-1.amazonaws.com/testdevsecopsjunto:latest|" ecs_task_definition.json
             aws ecs register-task-definition --cli-input-json file://ecs_task_definition.json --family TesteDevSecOpsJunto
 
       # Força um novo deployment da aplicação no ECS
