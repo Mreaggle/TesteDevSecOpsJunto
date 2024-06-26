@@ -7,6 +7,9 @@ jobs:
     working_directory: ~/project # Define o diretório de trabalho
     steps:
       - run:
+          name: Criar pasta de artefatos
+          command: mkdir artifacts
+      - run:
           name: Instalar Java (versão mais recente) com sdkman
           command: |
             curl -s "https://get.sdkman.io" | bash
@@ -48,7 +51,7 @@ jobs:
             fi
       - store_artifacts:  # Salva o relatório de testes como artefato
           path: app1/test-report.txt
-          destination: test-report
+          destination: artifacts/test-report
 
   scan-app-app2: # Job para realizar análise estática de segurança da aplicação app2
     docker:
@@ -123,7 +126,7 @@ jobs:
             docker run -v /home/circleci/project:/src ${DOCKERHUB_USER}/dependency-check:custom --project app2 --scan . --format HTML --out ./dependency-check-report.html # Mudança: scan "."
       - store_artifacts:
           path: app2/dependency-check-report.html
-          destination: dependency-check-report
+          destination: artifacts/dependency-check-report
 
   scan-docker-app1: # Job para realizar análise de segurança da imagem Docker da app1
     docker:
@@ -152,7 +155,7 @@ jobs:
             docker run --rm aquasec/trivy:latest image ${DOCKERHUB_USER}/app1:latest > trivy-report.txt # Redireciona a saída para um arquivo
       - store_artifacts:  # Salva o relatório do Trivy como artefato
           path: trivy-report.txt
-          destination: trivy-report
+          destination: artifacts/trivy-report
 
 #      - run:
 #          name: Executar Clair # Utiliza Clair para uma segunda validação da imagem
