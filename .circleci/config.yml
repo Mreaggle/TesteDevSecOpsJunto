@@ -101,7 +101,7 @@ jobs:
             echo "Listando diretórios:"
             ls -la
             if [ -d "app2" ]; then
-              cd app2 && sonar-scanner -Dsonar.projectKey=mreaggle_app2 -Dsonar.organization=$SONAR_ORGANIZATION -Dsonar.host.url=https://sonarcloud.io -Dsonar.login=$SONAR_TOKEN > scan-results/app2/sonarqube-report.txt
+              cd app2 && sonar-scanner -Dsonar.projectKey=mreaggle_app2 -Dsonar.organization=$SONAR_ORGANIZATION -Dsonar.host.url=https://sonarcloud.io -Dsonar.login=$SONAR_TOKEN > ./sonarqube-report.txt  # Salva o relatório dentro de app2
             else
               echo "Erro: Diretório app2 não encontrado!"
               exit 1
