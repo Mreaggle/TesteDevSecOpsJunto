@@ -2,7 +2,7 @@
   "containerDefinitions": [
     {
       "name": "app1",
-      "image": "${DOCKERHUB_USER}/testdevsecopsjunto:latest",
+      "image": "docker.io/${DOCKERHUB_USER}/testdevsecopsjunto:latest",
       "essential": true,
       "portMappings": [
         {
