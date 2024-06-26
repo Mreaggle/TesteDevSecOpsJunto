@@ -162,7 +162,7 @@ jobs:
 #            docker pull arminc/clair-local-scan:latest # Baixa a imagem do Clair Local Scan
 #            docker run --rm -it --link clair-db:postgres -v $PWD:/tmp/src arminc/clair-local-scan:latest --config http://clair-db:6060 clair app1 # Executa o Clair Local Scan
 
-deploy-app1: # Job para realizar o deploy da aplicação app1 no AWS ECS Fargate
+  deploy-app1: # Job para realizar o deploy da aplicação app1 no AWS ECS Fargate
     docker:
       - image: cimg/amazonlinux2:2018.03 # Imagem compatível com AWS CLI
     working_directory: ~/project 
