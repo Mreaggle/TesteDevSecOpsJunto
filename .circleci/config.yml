@@ -171,6 +171,7 @@ jobs:
     working_directory: ~/project 
     steps:
       - checkout # Faz o checkout do código-fonte do repositório
+      - setup_remote_docker # Configura um ambiente Docker remoto
       - run:
           name: Configurar AWS CLI # Configura as credenciais da AWS
           command: |
