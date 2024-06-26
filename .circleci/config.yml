@@ -7,9 +7,6 @@ jobs:
     working_directory: ~/project # Define o diretório de trabalho
     steps:
       - run:
-          name: Criar pasta de artefatos
-          command: mkdir artifacts
-      - run:
           name: Instalar Java (versão mais recente) com sdkman
           command: |
             curl -s "https://get.sdkman.io" | bash
@@ -18,6 +15,9 @@ jobs:
             sdk default java 21.0.3-tem  # Define a versão 21.0.3-tem como padrão
       - setup_remote_docker
       - checkout # Faz o checkout do código-fonte do repositório
+      - run:
+          name: Criar pasta de artefatos
+          command: mkdir artifacts
       - run:
           name: Executar comando Docker # Constrói a imagem Docker
           command: |
