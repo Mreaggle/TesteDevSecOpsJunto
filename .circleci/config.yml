@@ -48,9 +48,10 @@ jobs:
             fi
 
   scan-app-app2: # Job para realizar análise estática de segurança da aplicação app2
+    docker:  # Adicione a chave 'docker:' aqui
       - image: cimg/node:18.12.0
     working_directory: ~/project # Define o diretório de trabalho para /home/circleci/project
-    steps:
+    steps: # Remova a repetição de 'steps:' aqui
       - checkout # Faz o checkout do código-fonte do repositório
       - run:
           name: Instalar ESLint (app2) # Instala ESLint como dependência de desenvolvimento
@@ -76,8 +77,6 @@ jobs:
               echo "Erro: Diretório app2 não encontrado!" # Imprime mensagem de erro se o diretório não for encontrado
               exit 1 # Sai do script com erro
             fi
-    steps:
-      steps:
       - run:
           name: Instalar SonarQube Scanner
           command: |
@@ -196,5 +195,3 @@ workflows:
             - test-app1
             - scan-app-app2
             - scan-docker-app1
-            
-            
