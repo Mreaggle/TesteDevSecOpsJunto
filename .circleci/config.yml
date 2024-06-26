@@ -1,5 +1,8 @@
 version: 2.1
 
+orbs:
+  aws-ecs: circleci/aws-ecs@4.0.0
+  
 jobs:
   checkout: # Job para realizar o checkout do código e construir a imagem Docker
     docker:
@@ -191,9 +194,9 @@ jobs:
           name: Imprimir task definition
           command: cat ecs_task_definition.json
       - aws-ecs/deploy-service-update: # Utiliza a orb aws-ecs para deploy
-          cluster: "TesteDevSecOpsJunto" # Substitua pelo nome do seu cluster
-          family: "testedevsecops" # Substitua pelo nome da sua família de serviço
-          container-image-name-updates: 'container=app1,tag=${CIRCLE_SHA1}' # Adapte para o seu container
+          cluster: "TesteDevSecOpsJunto" 
+          family: "testedevsecops" 
+          container-image-name-updates: 'container=app1,tag=${CIRCLE_SHA1}' 
 
 # Define o workflow para executar os jobs sequencialmente
 workflows:
