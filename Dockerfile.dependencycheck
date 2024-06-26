@@ -1,4 +1,4 @@
-FROM owasp/dependency-check:6.2.0
+FROM owasp/dependency-check:latest
 
 USER root
 
