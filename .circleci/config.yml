@@ -101,14 +101,17 @@ jobs:
               echo "Erro: Diretório app2 não encontrado!"
               exit 1
             fi
-      - run:
-          name: Instalar Maven
-          command: |
-            sudo apt-get update
-            sudo apt-get install -y maven
+         - run:
+        name: Verificar diretório app2
+        command: |
+          if [ ! -d "app2" ]; then
+            echo "Erro: Diretório app2 não encontrado!"
+            exit 1
+          fi
       - run:
           name: Executar OWASP Dependency-Check (app2)
           command: |
+            S
             docker run -v $(pwd):/src owasp/dependency-check --project app2 --scan /src/app2 --format HTML --out /src/app2/dependency-check-report.html
       - store_artifacts:
           path: app2/dependency-check-report.html
