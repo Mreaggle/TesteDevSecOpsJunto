@@ -181,13 +181,13 @@ jobs:
           command: |
             aws ecs register-task-definition --cli-input-json file://ecs_task_definition.json --family testedevsecops
       - run:
-    name: Deploy da aplicação app1
-    command: |
-      aws ecs update-service \
-        --cluster TesteDevSecOpsJunto \
-        --service testedevsecops \
-        --force-new-deployment \
-        --load-balancers targetGroupArn=arn:aws:elasticloadbalancing:us-east-1:058264068878:targetgroup/app1-tg/f139bc416c67ca75,containerName=app1,containerPort=3000
+        name: Deploy da aplicação app1
+        command: |
+            aws ecs update-service \
+            --cluster TesteDevSecOpsJunto \
+            --service testedevsecops \
+            --force-new-deployment \
+            --load-balancers targetGroupArn=arn:aws:elasticloadbalancing:us-east-1:058264068878:targetgroup/app1-tg/f139bc416c67ca75,containerName=app1,containerPort=3000
 
 # Define o workflow para executar os jobs sequencialmente
 workflows:
