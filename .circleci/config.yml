@@ -56,6 +56,7 @@ jobs:
     working_directory: ~/project
     steps:
       - checkout # Faz o checkout do código-fonte do repositório
+      - setup_remote_docker
       - run:
           name: Instalar ESLint # Instala ESLint 
           command: |
