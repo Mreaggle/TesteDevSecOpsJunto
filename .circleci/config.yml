@@ -16,6 +16,9 @@ jobs:
       - setup_remote_docker
       - checkout # Faz o checkout do código-fonte do repositório
       - run:
+          name: Criar pasta de artefatos
+          command: mkdir artifacts
+      - run:
           name: Executar comando Docker # Constrói a imagem Docker
           command: |
             #!/bin/bash -eo pipefail
@@ -41,13 +44,15 @@ jobs:
             echo "Listando diretórios:"
             ls -la
             if [ -d "app1" ]; then
-              cd app1 && npm test > test-report.txt # Redireciona a saída para um arquivo
+              cd app1 && npm test > test-results/test-report.txt # Redireciona a saída para um arquivo dentro da pasta test-results
             else
               echo "Erro: Diretório app1 não encontrado!"
               exit 1
             fi
       - store_artifacts:  # Salva o relatório de testes como artefato
-          path: app1/test-report.txt # Caminho relativo ao diretório de trabalho
+          path: test-results # Diretório onde os relatórios de teste são salvos
+      - store_test_results: # Armazena os resultados dos testes para visualização no CircleCI
+          path: test-results # Diretório onde os relatórios de teste são salvos
 
   scan-app-app2: # Job para realizar análise estática de segurança da aplicação app2
     docker:
@@ -108,8 +113,11 @@ jobs:
             exit 1
             fi
       - run:
+          name: Criar diretório de resultados
+          command: mkdir -p scan-results/app2
+      - run:
           name: Construir imagem Dependency-Check customizada
-          command: docker build -t ${DOCKERHUB_USER}/dependency-check:custom -f Dockerfile.dependencycheck .  # Tag corrigida
+          command: docker build -t ${DOCKERHUB_USER}/dependency-check:custom -f Dockerfile.dependencycheck . 
       - run:
           name: Login no Docker Hub
           command: echo $DOCKERHUB_PASSWORD | docker login -u $DOCKERHUB_USER --password-stdin
@@ -119,12 +127,14 @@ jobs:
       - run:
           name: Executar OWASP Dependency-Check (app2)
           command: |
-            docker run -v $(pwd)/app2:/src ${DOCKERHUB_USER}/dependency-check:custom --project app2 --scan . --format HTML --out ./dependency-check-report.html 
+            docker run -d --name dependency-check -v $(pwd)/scan-results/app2:/reports ${DOCKERHUB_USER}/dependency-check:custom --project app2 --scan . --format HTML --out /reports/dependency-check-report.html 
+            docker wait dependency-check # Aguarda o container finalizar a execução
+            docker cp dependency-check:/reports/dependency-check-report.html scan-results/app2/  # Copia o relatório do container para o diretório app2
       - run: # Adicionando ls para depuração
           name: Listar arquivos em app2
-          command: ls -la app2
+          command: ls -la scan-results/app2
       - store_artifacts:
-          path: app2/dependency-check-report.html
+          path: scan-results/app2 # Salva os artefatos do diretório scan-results/app2
 
   scan-docker-app1: # Job para realizar análise de segurança da imagem Docker da app1
     docker:
@@ -150,10 +160,9 @@ jobs:
           command: |
             #!/bin/bash -eo pipefail
             docker pull aquasec/trivy:latest
-            docker run --rm aquasec/trivy:latest image ${DOCKERHUB_USER}/testdevsecopsjunto:latest > trivy-report.txt
-            
+            docker run --rm aquasec/trivy:latest image ${DOCKERHUB_USER}/testdevsecopsjunto:latest > scan-results/trivy-report.txt # Salva o relatório do Trivy na pasta scan-results
       - store_artifacts:  # Salva o relatório do Trivy como artefato
-          path: trivy-report.txt # Caminho relativo ao diretório de trabalho
+          path: scan-results/trivy-report.txt # Caminho relativo ao diretório de trabalho
 
   deploy-app1: # Job para realizar o deploy da aplicação app1 no AWS ECS Fargate
     docker:
@@ -187,10 +196,6 @@ jobs:
       - run:
           name: Imprimir task definition
           command: cat ecs_task_definition.json
-      - run:
-          name: Atualizar task definition com nova imagem
-          command: |
-            aws ecs register-task-definition --cli-input-json file://ecs_task_definition.json --family testedevsecops
       - run:
           name: Atualizar task definition com nova imagem # Atualiza a task definition no ECS
           command: |
