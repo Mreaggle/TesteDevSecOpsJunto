@@ -137,7 +137,7 @@ jobs:
           command: |
             #!/bin/bash -eo pipefail
             docker pull aquasec/trivy:latest
-            docker run --rm aquasec/trivy:latest image app1
+            docker run -it -d --rm aquasec/trivy:latest image app1
       - run:
           name: Executar Clair (app1) # Utiliza Clair para uma segunda validação da imagem
           command: |
