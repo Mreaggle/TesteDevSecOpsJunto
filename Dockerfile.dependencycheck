@@ -1,6 +1,9 @@
-FROM owasp/dependency-check:latest
+FROM owasp/dependency-check:6.2.0
 
 USER root
+
+# Copiar o diretório app2 para dentro da imagem
+COPY app2 /src/app2
 
 # Verificar permissões do diretório /src
 RUN ls -la /src && chmod -R 777 /src
