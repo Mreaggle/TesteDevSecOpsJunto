@@ -102,18 +102,10 @@ jobs:
           command: |
             curl -sL https://raw.githubusercontent.com/jeremylong/DependencyCheck/main/build-docker.sh | sh
       - run:
-          name: Executar OWASP Dependency-Check (app2) # Executa a análise com OWASP
+          name: Executar OWASP Dependency-Check (app2)
           command: |
-            #!/bin/bash -eo pipefail
-            echo "Listando diretórios:"
-            ls -la
-            if [ -d "app2" ]; then
-              cd app2 && dependency-check.sh --project app2 --scan ./ --format HTML --out ./dependency-check-report.html
-            else
-              echo "Erro: Diretório app2 não encontrado!"
-              exit 1
-            fi
-      - store_artifacts:  # Armazena o artefato HTML
+            docker run -v $(pwd):/src owasp/dependency-check --project app2 --scan /src/app2 --format HTML --out /src/app2/dependency-check-report.html
+      - store_artifacts: # Armazena o artefato HTML do Dependency Check
           path: app2/dependency-check-report.html
           destination: dependency-check-report
 
@@ -148,7 +140,7 @@ jobs:
             docker pull arminc/clair-db:latest # Baixa a imagem do banco de dados Clair
             docker run -d -p 5432:5432 -e POSTGRES_PASSWORD=password --name clair-db arminc/clair-db:latest # Inicia o banco de dados Clair
             docker pull arminc/clair-local-scan:latest # Baixa a imagem do Clair Local Scan
-            docker run --rm -it --link clair-db:postgres -v $PWD:/tmp/src arminc/clair-local-scan:latest -c http://clair-db:6060 -i app1 # Executa o Clair Local Scan
+            docker run --rm -it --link clair-db:postgres -v $PWD:/tmp/src arminc/clair-local-scan:latest --config http://clair-db:6060 -i app1 # Executa o Clair Local Scan
 
   deploy-app1: # Job para realizar o deploy da aplicação app1 no AWS ECS Fargate
     docker:
