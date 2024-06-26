@@ -141,9 +141,11 @@ jobs:
       - run:
           name: Executar Clair (app1) # Utiliza Clair para uma segunda validação da imagem
           command: |
-            docker pull arminc/clair-scanner:latest
+            docker pull arminc/clair-local-scan:latest
+            docker run -d --name db arminc/clair-db:2017-03-15
+            docker pull arminc/clair-local-scan:latest
             docker run -d -p 5432:5432 -e POSTGRES_PASSWORD=password --name db postgres:latest
-            docker run --rm -it --link db:postgres -v $PWD:/tmp/src arminc/clair-scanner:latest clair-db:postgres clair:http://clair:6060 /tmp/src app1
+            docker run --rm -it --link db:postgres -v $PWD:/tmp/src arminc/clair-local-scan:latest clair-db:postgres clair:http://clair:6060 /tmp/src app1
 
   deploy-app1: # Job para realizar o deploy da aplicação app1 no AWS ECS Fargate
     docker:
@@ -197,5 +199,4 @@ workflows:
           requires:
             - test-app1
             - scan-app-app2
-            - scan-docker-app1
-            
+            - scan-docker-app1           
