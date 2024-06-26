@@ -1,8 +1,5 @@
 version: 2.1
-
-orbs:
-  aws-ecs: circleci/aws-ecs@4.0.0
-  
+ 
 jobs:
   checkout: # Job para realizar o checkout do código e construir a imagem Docker
     docker:
@@ -161,7 +158,7 @@ jobs:
       - store_artifacts:  # Salva o relatório do Trivy como artefato
           path: scan-results/trivy-report.txt # Caminho relativo ao diretório de trabalho
 
-  deploy-app1: # Job para realizar o deploy da aplicação app1 no AWS ECS Fargate
+    deploy-app1: # Job para realizar o deploy da aplicação app1 no AWS ECS Fargate
     docker:
       - image: cimg/aws:2022.06.1 # Imagem com AWS CLI
     working_directory: ~/project 
@@ -193,10 +190,23 @@ jobs:
       - run:
           name: Imprimir task definition
           command: cat ecs_task_definition.json
-      - aws-ecs/deploy-service-update: # Utiliza a orb aws-ecs para deploy
-          cluster: "TesteDevSecOpsJunto" 
-          family: "testedevsecops" 
-          container-image-name-updates: 'container=app1,tag=${CIRCLE_SHA1}' 
+      - run:
+          name: Atualizar task definition com nova imagem # Atualiza a task definition no ECS
+          command: |
+            aws ecs register-task-definition --cli-input-json file://ecs_task_definition.json --family testedevsecops
+      - run:
+          name: Obter a revisão da task definition
+          command: |
+            TASK_DEFINITION_REVISION=$(aws ecs describe-task-definitions --family testedevsecops --query 'taskDefinitions[0].revision' --output text)
+            echo "TASK_DEFINITION_REVISION=$TASK_DEFINITION_REVISION" >> $BASH_ENV
+      - run:
+          name: Deploy da aplicação app1 # Atualiza o serviço ECS com a nova task definition
+          command: |
+            aws ecs update-service \
+              --cluster TesteDevSecOpsJunto \
+              --service testedevsecops \
+              --task-definition testedevsecops:$TASK_DEFINITION_REVISION \
+              --force-new-deployment 
 
 # Define o workflow para executar os jobs sequencialmente
 workflows:
