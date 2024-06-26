@@ -1,10 +1,14 @@
-version: 4.4.4 # Versão da Configuração do CircleCI
+version: 4.4.4
+
+# Define o executor padrão para os jobs, utilizando uma imagem Docker Node.js
+executors:
+  node-executor:
+    docker:
+      - image: cimg/node:18.12.0
 
 jobs:
-  checkout: # Job para realizar o checkout do código e construir a imagem Docker
-    docker:
-      - image: cimg/node:18.12.0 # Imagem Node.js 18.12.0 next-gen
-    working_directory: ~/project # Define o diretório de trabalho
+  checkout: # Job para realizar o checkout do código e construir a imagem Docker da app1
+    executor: node-executor # Utiliza o executor node-executor
     steps:
       - run:
           name: Instalar Java (versão mais recente) com sdkman
@@ -29,9 +33,7 @@ jobs:
             fi
 
   test-app1: # Job para executar os testes unitários da aplicação app1
-    docker:
-      - image: cimg/node:18.12.0
-    working_directory: ~/project
+    executor: node-executor
     steps:
       - checkout # Faz o checkout do código-fonte do repositório
       - run:
@@ -50,13 +52,72 @@ jobs:
           path: app1/test-report.txt
           destination: test-report
 
-  scan-app-app2: # Job para realizar análise estática de segurança da aplicação app2
-    docker:
-      - image: cimg/node:18.12.0
-    working_directory: ~/project
+  scan-docker-app1: # Job para realizar análise de segurança da imagem Docker da app1
+    executor: node-executor
     steps:
       - checkout # Faz o checkout do código-fonte do repositório
-      - setup_remote_docker
+      - setup_remote_docker # Configura um ambiente Docker remoto
+      - run:
+          name: Construir imagem Docker # Constrói a imagem Docker 
+          command: |
+            #!/bin/bash -eo pipefail
+            echo "Listando diretórios:"
+            ls -la
+            if [ -d "app1" ]; then
+              cd app1 && docker build -t app1 .
+            else
+              echo "Erro: Diretório app1 não encontrado!"
+              exit 1
+            fi
+      - run:
+          name: Executar Trivy # Executa Trivy para analisar a imagem 'app1'
+          command: |
+            #!/bin/bash -eo pipefail
+            docker pull aquasec/trivy:latest
+            docker run --rm aquasec/trivy:latest image ${DOCKERHUB_USER}/app1:latest > trivy-report.txt # Redireciona a saída para um arquivo
+      - store_artifacts:  # Salva o relatório do Trivy como artefato
+          path: trivy-report.txt
+          destination: trivy-report
+
+  deploy-app1: # Job para realizar o deploy da aplicação app1 no AWS ECS Fargate
+    docker:
+      - image: cimg/amazonlinux2:2018.03 # Imagem compatível com AWS CLI
+    working_directory: ~/project 
+    steps:
+      - checkout # Faz o checkout do código-fonte do repositório
+      - run:
+          name: Configurar AWS CLI # Configura as credenciais da AWS
+          command: |
+            aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
+            aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+            aws configure set default.region $AWS_DEFAULT_REGION
+      - run:
+          name: Construir e enviar imagem Docker (app1) # Constrói e envia a imagem Docker para o Docker Hub
+          command: |
+            #!/bin/bash -eo pipefail
+            echo "Listando diretórios:"
+            ls -la 
+            if [ -d "app1" ]; then 
+              cd app1 && docker build -t ${DOCKERHUB_USER}/testdevsecopsjunto:latest . 
+              echo $DOCKERHUB_PASSWORD | docker login -u $DOCKERHUB_USER --password-stdin
+              docker push ${DOCKERHUB_USER}/testdevsecopsjunto:latest 
+            else
+              echo "Erro: Diretório app1 não encontrado!" 
+              exit 1 
+            fi
+      - run:
+          name: Atualizar task definition com nova imagem # Atualiza a task definition no ECS
+          command: |
+            aws ecs register-task-definition --cli-input-json file://ecs_task_definition.json --family testedevsecops
+      - run:
+          name: Deploy da aplicação app1
+          command: |
+            aws ecs update-service --cluster TesteDevSecOpsJunto --service testedevsecops --force-new-deployment --load-balancers targetGroupArn=arn:aws:elasticloadbalancing:us-east-1:058264068878:targetgroup/app1-tg/f139bc416c67ca75,containerName=app1,containerPort=3000
+
+  scan-app-app2: # Job para realizar análise estática de segurança da aplicação app2
+    executor: node-executor
+    steps:
+      - checkout # Faz o checkout do código-fonte do repositório
       - run:
           name: Instalar ESLint # Instala ESLint 
           command: |
@@ -125,94 +186,28 @@ jobs:
           path: app2/dependency-check-report.html
           destination: dependency-check-report
 
-  scan-docker-app1: # Job para realizar análise de segurança da imagem Docker da app1
-    docker:
-      - image: cimg/node:18.12.0
-    working_directory: ~/project
-    steps:
-      - checkout # Faz o checkout do código-fonte do repositório
-      - setup_remote_docker # Configura um ambiente Docker remoto
-      - run:
-          name: Construir imagem Docker # Constrói a imagem Docker 
-          command: |
-            #!/bin/bash -eo pipefail
-            echo "Listando diretórios:"
-            ls -la
-            if [ -d "app1" ]; then
-              cd app1 && docker build -t app1 .
-            else
-              echo "Erro: Diretório app1 não encontrado!"
-              exit 1
-            fi
-      - run:
-          name: Executar Trivy # Executa Trivy para analisar a imagem 'app1'
-          command: |
-            #!/bin/bash -eo pipefail
-            docker pull aquasec/trivy:latest
-            docker run --rm aquasec/trivy:latest image ${DOCKERHUB_USER}/app1:latest > trivy-report.txt # Redireciona a saída para um arquivo
-      - store_artifacts:  # Salva o relatório do Trivy como artefato
-          path: trivy-report.txt
-          destination: trivy-report
-
-#      - run:
-#          name: Executar Clair # Utiliza Clair para uma segunda validação da imagem
-#          command: |
-#            docker pull arminc/clair-db:latest # Baixa a imagem do banco de dados Clair
-#            docker run -d -p 5432:5432 -e POSTGRES_PASSWORD=password --name clair-db arminc/clair-db:latest # Inicia o banco de dados Clair
-#            docker pull arminc/clair-local-scan:latest # Baixa a imagem do Clair Local Scan
-#            docker run --rm -it --link clair-db:postgres -v $PWD:/tmp/src arminc/clair-local-scan:latest --config http://clair-db:6060 clair app1 # Executa o Clair Local Scan
-
-  deploy-app1: # Job para realizar o deploy da aplicação app1 no AWS ECS Fargate
-    docker:
-      - image: cimg/amazonlinux2:2018.03 # Imagem compatível com AWS CLI
-    working_directory: ~/project 
-    steps:
-      - checkout # Faz o checkout do código-fonte do repositório
-      - run:
-          name: Configurar AWS CLI # Configura as credenciais da AWS
-          command: |
-            aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
-            aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
-            aws configure set default.region $AWS_DEFAULT_REGION
-      - run:
-          name: Construir e enviar imagem Docker (app1) # Constrói e envia a imagem Docker para o Docker Hub
-          command: |
-            #!/bin/bash -eo pipefail
-            echo "Listando diretórios:"
-            ls -la 
-            if [ -d "app1" ]; then 
-              cd app1 && docker build -t ${DOCKERHUB_USER}/testdevsecopsjunto:latest . 
-              echo $DOCKERHUB_PASSWORD | docker login -u $DOCKERHUB_USER --password-stdin
-              docker push ${DOCKERHUB_USER}/testdevsecopsjunto:latest 
-            else
-              echo "Erro: Diretório app1 não encontrado!" 
-              exit 1 
-            fi
-      - run:
-          name: Atualizar task definition com nova imagem # Atualiza a task definition no ECS
-          command: |
-            aws ecs register-task-definition --cli-input-json file://ecs_task_definition.json --family testedevsecops
-      - run:
-          name: Deploy da aplicação app1
-          command: |
-            aws ecs update-service --cluster TesteDevSecOpsJunto --service testedevsecops --force-new-deployment --load-balancers targetGroupArn=arn:aws:elasticloadbalancing:us-east-1:058264068878:targetgroup/app1-tg/f139bc416c67ca75,containerName=app1,containerPort=3000
-
-# Define o workflow para executar os jobs sequencialmente
+# Workflows: Define os fluxos de trabalho do pipeline
 workflows:
-  build_and_deploy:
+  app1-workflow: # Workflow para a aplicação app1
     jobs:
-      - checkout # Executa o job 'checkout' primeiro
-      - test-app1: 
+      - checkout:
+          filters:
+            branches:
+              only: main # Executa o checkout apenas na branch 'main'
+      - test-app1:
           requires:
-            - checkout
-      - scan-app-app2: 
+            - checkout # Executa 'test-app1' após 'checkout'
+      - scan-docker-app1:
           requires:
-            - checkout
-      - scan-docker-app1: 
+            - checkout # Executa 'scan-docker-app1' após 'checkout'
+      - deploy-app1:
           requires:
-            - checkout
-      - deploy-app1: 
-          requires:
-            - test-app1
-            - scan-app-app2
-            - scan-docker-app1
+            - test-app1 # Executa 'deploy-app1' após 'test-app1'
+            - scan-docker-app1 # Executa 'deploy-app1' após 'scan-docker-app1'
+
+  app2-workflow: # Workflow para a aplicação app2
+    jobs:
+      - scan-app-app2:
+          filters:
+            branches:
+              only: main # Executa 'scan-app-app2' apenas na branch 'main'
