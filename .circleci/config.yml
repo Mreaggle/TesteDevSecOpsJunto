@@ -41,11 +41,14 @@ jobs:
             echo "Listando diretórios:"
             ls -la
             if [ -d "app1" ]; then
-              cd app1 && npm test
+              cd app1 && npm test > test-report.txt # Redireciona a saída para um arquivo
             else
               echo "Erro: Diretório app1 não encontrado!"
               exit 1
             fi
+      - store_artifacts:  # Salva o relatório de testes como artefato
+          path: app1/test-report.txt
+          destination: test-report
 
   scan-app-app2: # Job para realizar análise estática de segurança da aplicação app2
     docker:
@@ -98,10 +101,6 @@ jobs:
               exit 1
             fi
       - run:
-          name: Instalar OWASP Dependency-Check # Instala o OWASP Dependency-Check
-          command: |
-            curl -sL https://raw.githubusercontent.com/jeremylong/DependencyCheck/main/build-docker.sh | sh
-      - run:
           name: Instalar Maven
           command: |
             sudo apt-get update
@@ -138,7 +137,11 @@ jobs:
           command: |
             #!/bin/bash -eo pipefail
             docker pull aquasec/trivy:latest
-            docker run --rm aquasec/trivy:latest image ${DOCKERHUB_USER}/app1:latest 
+            docker run --rm aquasec/trivy:latest image ${DOCKERHUB_USER}/app1:latest > trivy-report.txt # Redireciona a saída para um arquivo
+      - store_artifacts:  # Salva o relatório do Trivy como artefato
+          path: trivy-report.txt
+          destination: trivy-report
+
 #      - run:
 #          name: Executar Clair # Utiliza Clair para uma segunda validação da imagem
 #          command: |
