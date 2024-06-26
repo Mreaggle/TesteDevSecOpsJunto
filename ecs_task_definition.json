@@ -3,7 +3,7 @@
   "executionRoleArn": "arn:aws:iam::058264068878:role/ecsTaskExecutionRole",
   "containerDefinitions": [
     {
-      "name": "TesteDevSecOpsJunto",
+      "name": "app1",
       "image": "${DOCKERHUB_USER}/testdevsecopsjunto:latest",
       "cpu": 0,
       "memory": null,

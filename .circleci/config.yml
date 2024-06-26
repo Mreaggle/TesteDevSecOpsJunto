@@ -17,7 +17,7 @@ jobs:
       - checkout # Faz o checkout do código-fonte do repositório
       - run:
           name: Criar pasta de artefatos
-          command: mkdir artifacts
+          command: mkdir -p scan-results # Cria a pasta scan-results se ela não existir
       - run:
           name: Executar comando Docker # Constrói a imagem Docker
           command: |
@@ -44,13 +44,15 @@ jobs:
             echo "Listando diretórios:"
             ls -la
             if [ -d "app1" ]; then
-              cd app1 && npm test > test-report.txt # Redireciona a saída para um arquivo
+              cd app1 && npm test > test-results/test-report.txt # Redireciona a saída para um arquivo dentro da pasta test-results
             else
               echo "Erro: Diretório app1 não encontrado!"
               exit 1
             fi
       - store_artifacts:  # Salva o relatório de testes como artefato
-          path: app1/test-report.txt # Caminho relativo ao diretório de trabalho
+          path: test-results # Diretório onde os relatórios de teste são salvos
+      - store_test_results: # Armazena os resultados dos testes para visualização no CircleCI
+          path: test-results # Diretório onde os relatórios de teste são salvos
 
   scan-app-app2: # Job para realizar análise estática de segurança da aplicação app2
     docker:
@@ -60,25 +62,28 @@ jobs:
       - checkout # Faz o checkout do código-fonte do repositório
       - setup_remote_docker
       - run:
+          name: Criar diretório de resultados
+          command: mkdir -p scan-results/app2
+      - run:
           name: Instalar ESLint # Instala ESLint 
           command: |
             #!/bin/bash -eo pipefail
             echo "Listando diretórios:"
             ls -la
             if [ -d "app2" ]; then
-              cd app2 && npm install eslint@^7 --save-dev 
+              cd app2 && npm install eslint@^7 --save-dev
             else
               echo "Erro: Diretório app2 não encontrado!"
               exit 1
             fi
       - run:
-          name: Executar ESLint # Executa a análise de código com ESLint
+          name: Executar ESLint # Executa a análise de código com ESLint e salva a saída em um arquivo
           command: |
             #!/bin/bash -eo pipefail 
             echo "Listando diretórios:" 
             ls -la  
             if [ -d "app2" ]; then 
-              cd app2 && ./node_modules/.bin/eslint src/** --fix 
+              cd app2 && ./node_modules/.bin/eslint src/** --fix > scan-results/app2/eslint-report.txt
             else
               echo "Erro: Diretório app2 não encontrado!" 
               exit 1 
@@ -92,30 +97,20 @@ jobs:
             sudo mv sonar-scanner-6.0.0.4432-linux /opt/sonar-scanner
             sudo ln -s /opt/sonar-scanner/bin/sonar-scanner /usr/local/bin/sonar-scanner
       - run:
-          name: Executar SonarQube Scanner # Executa a análise com o SonarScanner
+          name: Executar SonarQube Scanner # Executa a análise com o SonarScanner e salva a saída em um arquivo
           command: |
             #!/bin/bash -eo pipefail
             echo "Listando diretórios:"
             ls -la
             if [ -d "app2" ]; then
-              cd app2 && sonar-scanner -Dsonar.projectKey=mreaggle_app2 -Dsonar.organization=$SONAR_ORGANIZATION -Dsonar.host.url=https://sonarcloud.io -Dsonar.login=$SONAR_TOKEN
+              cd app2 && sonar-scanner -Dsonar.projectKey=mreaggle_app2 -Dsonar.organization=$SONAR_ORGANIZATION -Dsonar.host.url=https://sonarcloud.io -Dsonar.login=$SONAR_TOKEN > scan-results/app2/sonarqube-report.txt
             else
               echo "Erro: Diretório app2 não encontrado!"
               exit 1
             fi
       - run:
-          name: Verificar diretório app2
-          command: |
-            if [ ! -d "app2" ]; then
-            echo "Erro: Diretório app2 não encontrado!"
-            exit 1
-            fi
-      - run:
-          name: Criar diretório de resultados
-          command: mkdir -p scan-results/app2
-      - run:
           name: Construir imagem Dependency-Check customizada
-          command: docker build -t ${DOCKERHUB_USER}/dependency-check:custom -f Dockerfile.dependencycheck . 
+          command: docker build -t ${DOCKERHUB_USER}/dependency-check:custom -f Dockerfile.dependencycheck .
       - run:
           name: Login no Docker Hub
           command: echo $DOCKERHUB_PASSWORD | docker login -u $DOCKERHUB_USER --password-stdin
@@ -158,15 +153,15 @@ jobs:
           command: |
             #!/bin/bash -eo pipefail
             docker pull aquasec/trivy:latest
-            docker run --rm aquasec/trivy:latest image ${DOCKERHUB_USER}/testdevsecopsjunto:latest > trivy-report.txt
+            docker run --rm aquasec/trivy:latest image ${DOCKERHUB_USER}/testdevsecopsjunto:latest > scan-results/trivy-report.txt
             
       - store_artifacts:  # Salva o relatório do Trivy como artefato
-          path: trivy-report.txt # Caminho relativo ao diretório de trabalho
+          path: scan-results/trivy-report.txt # Caminho relativo ao diretório de trabalho
 
   deploy-app1: # Job para realizar o deploy da aplicação app1 no AWS ECS Fargate
     docker:
       - image: cimg/aws:2022.06.1 # Imagem com AWS CLI
-    working_directory: ~/project
+    working_directory: ~/project 
     steps:
       - checkout # Faz o checkout do código-fonte do repositório
       - setup_remote_docker # Configura um ambiente Docker remoto
@@ -176,7 +171,7 @@ jobs:
             aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
             aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
             aws configure set default.region $AWS_DEFAULT_REGION
-      - run:
+      - run:  # Login no Docker Hub *antes* de iniciar o container
           name: Login no Docker Hub
           command: echo $DOCKERHUB_PASSWORD | docker login -u $DOCKERHUB_USER --password-stdin
       - run:
@@ -196,29 +191,9 @@ jobs:
           name: Imprimir task definition
           command: cat ecs_task_definition.json
       - aws-ecs/deploy-service-update: # Utiliza a orb aws-ecs para deploy
-          cluster: "${MY_APP_PREFIX}-cluster"  # Substitua pelo nome do seu cluster
-          family: "${MY_APP_PREFIX}-service" # Substitua pelo nome da sua família de serviço
-          container-image-name-updates: 'container=hello-world,tag=${CIRCLE_SHA1}' # Adapte para o seu container
-
-# Define o workflow para executar os jobs sequencialmente
-workflows:
-  build-and-deploy:
-    jobs:
-      - checkout # Executa o job 'checkout' primeiro
-      - test-app1: 
-          requires:
-            - checkout
-      - scan-app-app2: 
-          requires:
-            - checkout
-      - scan-docker-app1: 
-          requires:
-            - checkout
-      - deploy-app1: 
-          requires:
-            - test-app1
-            - scan-app-app2
-            - scan-docker-app1
+          cluster: "TesteDevSecOpsJunto" # Substitua pelo nome do seu cluster
+          family: "testedevsecops" # Substitua pelo nome da sua família de serviço
+          container-image-name-updates: 'container=app1,tag=${CIRCLE_SHA1}' # Adapte para o seu container
 
 # Define o workflow para executar os jobs sequencialmente
 workflows:
