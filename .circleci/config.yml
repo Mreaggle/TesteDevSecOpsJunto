@@ -152,10 +152,18 @@ jobs:
           command: |
             #!/bin/bash -eo pipefail
             docker pull aquasec/trivy:latest
-            docker run --rm aquasec/trivy:latest image ${DOCKERHUB_USER}/testdevsecopsjunto:latest > trivy-report.txt # Redireciona a saída para um arquivo e usa a tag correta
+            docker run --rm aquasec/trivy:latest image app1 > trivy-report.txt
+            
       - store_artifacts:  # Salva o relatório do Trivy como artefato
           path: trivy-report.txt # Caminho relativo ao diretório de trabalho
           destination: artifacts/trivy-report # Diretório de destino no CircleCI
+#- run:
+#name: Executar Clair # Utiliza Clair para uma segunda validação da imagem
+#command: |
+#docker pull arminc/clair-db:latest # Baixa a imagem do banco de dados Clair
+#docker run -d -p 5432:5432 -e POSTGRES_PASSWORD=password --name clair-db #arminc/clair-db:latest # Inicia o banco de dados Clair
+#docker pull arminc/clair-local-scan:latest # Baixa a imagem do Clair Local Scan
+#docker run --rm -it --link clair-db:postgres -v $PWD:/tmp/src arminc/clair-local-scan:latest --config http://clair-db:6060 clair app1 # RETIRADO Executa o Clair Local Scan
 
   deploy-app1: # Job para realizar o deploy da aplicação app1 no AWS ECS Fargate
     docker:
