@@ -135,7 +135,9 @@ jobs:
             fi
       - run:
           name: Executar Trivy (app1) # Executa Trivy para analisar a imagem 'app1' em busca de vulnerabilidades
-          command: docker run --rm aquasec/trivy:latest image app1
+          command: | 
+            docker pull aquasec/trivy:latest
+            docker run --rm aquasec/trivy:latest image app1
       - run:
           name: Executar Clair (app1) # Utiliza Clair para uma segunda validação da imagem, complementando o Trivy
           command: |
