@@ -118,9 +118,9 @@ jobs:
           name: Enviar imagem Dependency-Check customizada
           command: docker push ${DOCKERHUB_USER}/dependency-check:custom
       - run:
-    name: Executar OWASP Dependency-Check (app2)
-    command: |
-      docker run -v /home/circleci/project:/src ${DOCKERHUB_USER}/dependency-check:custom --project app2 --scan . --format HTML --out ./dependency-check-report.html # Mudança: scan "."
+          name: Executar OWASP Dependency-Check (app2)
+          command: |
+            docker run -v /home/circleci/project:/src ${DOCKERHUB_USER}/dependency-check:custom --project app2 --scan . --format HTML --out ./dependency-check-report.html # Mudança: scan "."
       - store_artifacts:
           path: app2/dependency-check-report.html
           destination: dependency-check-report
