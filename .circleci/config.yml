@@ -1,28 +1,37 @@
-version: 4.4.4
+version: 2.1
 
-# Define o executor padrão para os jobs, utilizando uma imagem Docker Node.js
 executors:
   node-executor:
     docker:
       - image: cimg/node:18.12.0
+    working_directory: ~/project
+
+  python-executor:
+    docker:
+      - image: cimg/python:3.8.12
+    working_directory: ~/project
+
+  aws-cli-executor:
+    docker:
+      - image: cimg/aws-cli:2.2.47
+    working_directory: ~/project
 
 jobs:
-  checkout: # Job para realizar o checkout do código e construir a imagem Docker da app1
-    executor: node-executor # Utiliza o executor node-executor
+  checkout:
+    executor: node-executor
     steps:
       - run:
           name: Instalar Java (versão mais recente) com sdkman
           command: |
             curl -s "https://get.sdkman.io" | bash
             source "$HOME/.sdkman/bin/sdkman-init.sh"
-            sdk install java # Instala a versão mais recente do Java
-            sdk default java 21.0.3-tem  # Define a versão 21.0.3-tem como padrão
+            sdk install java
+            sdk default java 21.0.3-tem
       - setup_remote_docker
-      - checkout # Faz o checkout do código-fonte do repositório
+      - checkout
       - run:
-          name: Executar comando Docker # Constrói a imagem Docker
+          name: Executar comando Docker
           command: |
-            #!/bin/bash -eo pipefail
             echo "Listando diretórios:"
             ls -la
             if [ -d "app1" ]; then
@@ -30,130 +39,60 @@ jobs:
             else
               echo "Erro: Diretório app1 não encontrado!"
               exit 1
-            fi
 
-  test-app1: # Job para executar os testes unitários da aplicação app1
+  test-app1:
     executor: node-executor
     steps:
-      - checkout # Faz o checkout do código-fonte do repositório
+      - checkout
       - run:
-          name: Executar testes # Executa os testes unitários da aplicação app1
+          name: Executar testes
           command: |
-            #!/bin/bash -eo pipefail
             echo "Listando diretórios:"
             ls -la
             if [ -d "app1" ]; then
-              cd app1 && npm test > test-report.txt # Redireciona a saída para um arquivo
+              cd app1 && npm test > test-report.txt
             else
               echo "Erro: Diretório app1 não encontrado!"
               exit 1
-            fi
-      - store_artifacts:  # Salva o relatório de testes como artefato
+      - store_artifacts:
           path: app1/test-report.txt
           destination: test-report
 
-  scan-docker-app1: # Job para realizar análise de segurança da imagem Docker da app1
+  scan-app-app2:
     executor: node-executor
     steps:
-      - checkout # Faz o checkout do código-fonte do repositório
-      - setup_remote_docker # Configura um ambiente Docker remoto
+      - checkout
+      - setup_remote_docker
       - run:
-          name: Construir imagem Docker # Constrói a imagem Docker 
+          name: Instalar ESLint
           command: |
-            #!/bin/bash -eo pipefail
-            echo "Listando diretórios:"
-            ls -la
-            if [ -d "app1" ]; then
-              cd app1 && docker build -t app1 .
-            else
-              echo "Erro: Diretório app1 não encontrado!"
-              exit 1
-            fi
-      - run:
-          name: Executar Trivy # Executa Trivy para analisar a imagem 'app1'
-          command: |
-            #!/bin/bash -eo pipefail
-            docker pull aquasec/trivy:latest
-            docker run --rm aquasec/trivy:latest image ${DOCKERHUB_USER}/app1:latest > trivy-report.txt # Redireciona a saída para um arquivo
-      - store_artifacts:  # Salva o relatório do Trivy como artefato
-          path: trivy-report.txt
-          destination: trivy-report
-
-  deploy-app1: # Job para realizar o deploy da aplicação app1 no AWS ECS Fargate
-    docker:
-      - image: cimg/amazonlinux2:2018.03 # Imagem compatível com AWS CLI
-    working_directory: ~/project 
-    steps:
-      - checkout # Faz o checkout do código-fonte do repositório
-      - run:
-          name: Configurar AWS CLI # Configura as credenciais da AWS
-          command: |
-            aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
-            aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
-            aws configure set default.region $AWS_DEFAULT_REGION
-      - run:
-          name: Construir e enviar imagem Docker (app1) # Constrói e envia a imagem Docker para o Docker Hub
-          command: |
-            #!/bin/bash -eo pipefail
-            echo "Listando diretórios:"
-            ls -la 
-            if [ -d "app1" ]; then 
-              cd app1 && docker build -t ${DOCKERHUB_USER}/testdevsecopsjunto:latest . 
-              echo $DOCKERHUB_PASSWORD | docker login -u $DOCKERHUB_USER --password-stdin
-              docker push ${DOCKERHUB_USER}/testdevsecopsjunto:latest 
-            else
-              echo "Erro: Diretório app1 não encontrado!" 
-              exit 1 
-            fi
-      - run:
-          name: Atualizar task definition com nova imagem # Atualiza a task definition no ECS
-          command: |
-            aws ecs register-task-definition --cli-input-json file://ecs_task_definition.json --family testedevsecops
-      - run:
-          name: Deploy da aplicação app1
-          command: |
-            aws ecs update-service --cluster TesteDevSecOpsJunto --service testedevsecops --force-new-deployment --load-balancers targetGroupArn=arn:aws:elasticloadbalancing:us-east-1:058264068878:targetgroup/app1-tg/f139bc416c67ca75,containerName=app1,containerPort=3000
-
-  scan-app-app2: # Job para realizar análise estática de segurança da aplicação app2
-    executor: node-executor
-    steps:
-      - checkout # Faz o checkout do código-fonte do repositório
-      - run:
-          name: Instalar ESLint # Instala ESLint 
-          command: |
-            #!/bin/bash -eo pipefail
             echo "Listando diretórios:"
             ls -la
             if [ -d "app2" ]; then
-              cd app2 && npm install eslint@^7 --save-dev 
+              cd app2 && npm install eslint@^7 --save-dev
             else
               echo "Erro: Diretório app2 não encontrado!"
               exit 1
-            fi
       - run:
-          name: Executar ESLint # Executa a análise de código com ESLint
+          name: Executar ESLint
           command: |
-            #!/bin/bash -eo pipefail 
-            echo "Listando diretórios:" 
-            ls -la  
-            if [ -d "app2" ]; then 
-              cd app2 && ./node_modules/.bin/eslint src/** --fix 
+            echo "Listando diretórios:"
+            ls -la
+            if [ -d "app2" ]; then
+              cd app2 && ./node_modules/.bin/eslint src/** --fix
             else
-              echo "Erro: Diretório app2 não encontrado!" 
-              exit 1 
-            fi
+              echo "Erro: Diretório app2 não encontrado!"
+              exit 1
       - run:
-          name: Instalar SonarQube Scanner # Instala o SonarQube Scanner
+          name: Instalar SonarQube Scanner
           command: |
             wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-6.0.0.4432-linux.zip
-            mv sonar-scanner-cli-6.0.0.4432-linux.zip sonarqube.zip
-            unzip sonarqube.zip 
+            unzip sonar-scanner-cli-6.0.0.4432-linux.zip
             sudo mv sonar-scanner-6.0.0.4432-linux /opt/sonar-scanner
             sudo ln -s /opt/sonar-scanner/bin/sonar-scanner /usr/local/bin/sonar-scanner
       - run:
-          name: Executar SonarQube Scanner # Executa a análise com o SonarScanner
+          name: Executar SonarQube Scanner
           command: |
-            #!/bin/bash -eo pipefail
             echo "Listando diretórios:"
             ls -la
             if [ -d "app2" ]; then
@@ -161,17 +100,9 @@ jobs:
             else
               echo "Erro: Diretório app2 não encontrado!"
               exit 1
-            fi
-      - run:
-          name: Verificar diretório app2
-          command: |
-            if [ ! -d "app2" ]; then
-            echo "Erro: Diretório app2 não encontrado!"
-            exit 1
-            fi
       - run:
           name: Construir imagem Dependency-Check customizada
-          command: docker build -t ${DOCKERHUB_USER}/dependency-check:custom -f Dockerfile.dependencycheck .  # Tag corrigida
+          command: docker build -t ${DOCKERHUB_USER}/dependency-check:custom -f Dockerfile.dependencycheck .
       - run:
           name: Login no Docker Hub
           command: echo $DOCKERHUB_PASSWORD | docker login -u $DOCKERHUB_USER --password-stdin
@@ -181,28 +112,82 @@ jobs:
       - run:
           name: Executar OWASP Dependency-Check (app2)
           command: |
-            docker run -v /home/circleci/project:/src ${DOCKERHUB_USER}/dependency-check:custom --project app2 --scan . --format HTML --out ./dependency-check-report.html # Mudança: scan "."
+            docker run -v /home/circleci/project:/src ${DOCKERHUB_USER}/dependency-check:custom --project app2 --scan . --format HTML --out ./dependency-check-report.html
       - store_artifacts:
           path: app2/dependency-check-report.html
           destination: dependency-check-report
 
-# Workflows: Define os fluxos de trabalho do pipeline
+  scan-docker-app1:
+    executor: node-executor
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+          name: Construir imagem Docker
+          command: |
+            echo "Listando diretórios:"
+            ls -la
+            if [ -d "app1" ]; then
+              cd app1 && docker build -t app1 .
+            else
+              echo "Erro: Diretório app1 não encontrado!"
+              exit 1
+      - run:
+          name: Executar Trivy
+          command: |
+            docker pull aquasec/trivy:latest
+            docker run --rm aquasec/trivy:latest image ${DOCKERHUB_USER}/app1:latest > trivy-report.txt
+      - store_artifacts:
+          path: trivy-report.txt
+          destination: trivy-report
+
+  deploy-app1:
+    executor: aws-cli-executor
+    steps:
+      - checkout
+      - run:
+          name: Configurar AWS CLI
+          command: |
+            aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
+            aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+            aws configure set default.region $AWS_DEFAULT_REGION
+      - run:
+          name: Construir e enviar imagem Docker (app1)
+          command: |
+            echo "Listando diretórios:"
+            ls -la
+            if [ -d "app1" ]; then
+              cd app1 && docker build -t ${DOCKERHUB_USER}/testdevsecopsjunto:latest .
+              echo $DOCKERHUB_PASSWORD | docker login -u $DOCKERHUB_USER --password-stdin
+              docker push ${DOCKERHUB_USER}/testdevsecopsjunto:latest
+            else
+              echo "Erro: Diretório app1 não encontrado!"
+              exit 1
+      - run:
+          name: Atualizar task definition com nova imagem
+          command: |
+            aws ecs register-task-definition --cli-input-json file://ecs_task_definition.json --family testedevsecops
+      - run:
+          name: Deploy da aplicação app1
+          command: |
+            aws ecs update-service --cluster TesteDevSecOpsJunto --service testedevsecops --force-new-deployment --load-balancers targetGroupArn=arn:aws:elasticloadbalancing:us-east-1:058264068878:targetgroup/app1-tg/f139bc416c67ca75,containerName=app1,containerPort=3000
+
 workflows:
+  version: 2
   build_and_deploy:
     jobs:
-      - checkout # Executa o job 'checkout' primeiro
-      - test-app1: 
+      - checkout
+      - test-app1:
           requires:
             - checkout
-      - scan-app-app2: 
+      - scan-app-app2:
           requires:
             - checkout
-      - scan-docker-app1: 
+      - scan-docker-app1:
           requires:
             - checkout
-      - deploy-app1: 
+      - deploy-app1:
           requires:
             - test-app1
             - scan-app-app2
             - scan-docker-app1
-            - scan-docker-app1              
