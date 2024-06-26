@@ -179,14 +179,14 @@ jobs:
           name: Construir e enviar imagem Docker (app1)
           command: |
             $(aws ecr get-login --no-include-email)
-            docker build -t ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/testdevsecopsjunto:latest .
-            docker push ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/testdevsecopsjunto:latest
+            docker build -t $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/testdevsecopsjunto:latest .
+            docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/testdevsecopsjunto:latest
 
       # Registra a nova definição de tarefa ECS
       - run:
           name: Atualizar task definition com nova imagem
           command: |
-            sed -i "s|${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/testdevsecopsjunto:latest|058264068878.dkr.ecr.us-east-1.amazonaws.com/testdevsecopsjunto:latest|" ecs_task_definition.json
+            sed -i "s|$AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/testdevsecopsjunto:latest|058264068878.dkr.ecr.us-east-1.amazonaws.com/testdevsecopsjunto:latest|" ecs_task_definition.json
             aws ecs register-task-definition --cli-input-json file://ecs_task_definition.json --family TesteDevSecOpsJunto
 
       # Força um novo deployment da aplicação no ECS
