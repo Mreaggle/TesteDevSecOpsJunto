@@ -72,13 +72,13 @@ jobs:
           name: Listar arquivos em node_modules/.bin
           command: ls -la app2/node_modules/.bin
       - run:
-          name: Executar ESLint # Executa a análise de código com ESLint e salva a saída em um arquivo
+          name: Executar ESLint # Executa o ESLint e salva um relatório JSON
           command: |
             #!/bin/bash -eo pipefail 
             echo "Listando diretórios:" 
             ls -la  
             if [ -d "app2" ]; then 
-              cd app2 && ./node_modules/.bin/eslint src/** --fix > ./eslint-report.txt # Salva o relatório dentro de app2
+              cd app2 && ./node_modules/.bin/eslint src/** --fix --format json > scan-results/app2/eslint-report.json
             else
               echo "Erro: Diretório app2 não encontrado!" 
               exit 1 
