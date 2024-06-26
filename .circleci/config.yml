@@ -111,7 +111,6 @@ jobs:
       - run:
           name: Executar OWASP Dependency-Check (app2)
           command: |
-            S
             docker run -v $(pwd):/src owasp/dependency-check --project app2 --scan /src/app2 --format HTML --out /src/app2/dependency-check-report.html
       - store_artifacts:
           path: app2/dependency-check-report.html
