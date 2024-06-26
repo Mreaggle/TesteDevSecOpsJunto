@@ -101,7 +101,7 @@ jobs:
               echo "Erro: Diretório app2 não encontrado!"
               exit 1
             fi
-         - run:
+      - run:
         name: Verificar diretório app2
         command: |
           if [ ! -d "app2" ]; then
