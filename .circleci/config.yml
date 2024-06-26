@@ -86,16 +86,17 @@ jobs:
             sudo mv sonar-scanner-6.0.0.4432-linux /opt/sonar-scanner 
             sudo ln -s /opt/sonar-scanner/bin/sonar-scanner /usr/local/bin/sonar-scanner
       - run:
-          name: Executar SonarQube Scanner (app2) # Executa a análise SAST com o SonarQube Scanner
+      - run:
+          name: Executar SonarQube Scanner (app2) # Executa a análise com o SonarScanner
           command: |
-            #!/bin/bash -eo pipefail # Define o shell e as opções de erro
-            echo "Listando diretórios:" # Imprime mensagem informativa
-            ls -la  # Lista os arquivos e diretórios no projeto
-            if [ -d "app2" ]; then # Verifica se o diretório app2 existe
-              cd app2 && sonar-scanner -Dsonar.projectKey=app2 -Dsonar.organization=$SONAR_ORGANIZATION -Dsonar.host.url=https://sonarcloud.io -Dsonar.login=$SONAR_TOKEN # Navega até app2 e executa o SonarQube Scanner
+            #!/bin/bash -eo pipefail
+            echo "Listando diretórios:"
+            ls -la 
+            if [ -d "app2" ]; then
+              cd app2 && sonar-scanner -Dsonar.projectKey=mreaggle_app2 -Dsonar.organization=$SONAR_ORGANIZATION -Dsonar.host.url=https://sonarcloud.io -Dsonar.login=$SONAR_TOKEN 
             else
-              echo "Erro: Diretório app2 não encontrado!" # Imprime mensagem de erro se o diretório não for encontrado
-              exit 1 # Sai do script com erro
+              echo "Erro: Diretório app2 não encontrado!"
+              exit 1
             fi
       - run:
           name: Instalar Snyk # Instala Snyk para análise de vulnerabilidades
