@@ -110,7 +110,7 @@ jobs:
             fi
       - run:
           name: Construir imagem Dependency-Check customizada
-          command: docker build -t dependency-check:custom -f Dockerfile.dependencycheck .
+          command: docker build -t ${DOCKERHUB_USER}/dependency-check:custom -f Dockerfile.dependencycheck .  # Tag corrigida
       - run:
           name: Login no Docker Hub
           command: echo $DOCKERHUB_PASSWORD | docker login -u $DOCKERHUB_USER --password-stdin
@@ -120,7 +120,7 @@ jobs:
       - run:
           name: Executar OWASP Dependency-Check (app2)
           command: |
-            docker run -v /home/circleci/project:/src ${DOCKERHUB_USER}/dependency-check:custom --project app2 --scan /src/app2 --format HTML --out /src/app2/dependency-check-report.html  # Tag completa da imagem
+            docker run -v /home/circleci/project:/src ${DOCKERHUB_USER}/dependency-check:custom --project app2 --scan /src/app2 --format HTML --out /src/app2/dependency-check-report.html
       - store_artifacts:
           path: app2/dependency-check-report.html
           destination: dependency-check-report
