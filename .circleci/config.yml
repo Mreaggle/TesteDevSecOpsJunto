@@ -111,7 +111,7 @@ jobs:
       - run:
           name: Executar OWASP Dependency-Check (app2)
           command: |
-            docker run -v $(pwd):/src owasp/dependency-check --project app2 --scan /src/app2 --format HTML --out /src/app2/dependency-check-report.html
+            docker run -v /home/circleci/project:/src owasp/dependency-check --project app2 --scan /src/app2 --format HTML --out /src/app2/dependency-check-report.html  # Alterado o mapeamento do volume
       - store_artifacts:
           path: app2/dependency-check-report.html
           destination: dependency-check-report
