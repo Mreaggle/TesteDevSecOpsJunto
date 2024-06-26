@@ -1,41 +1,37 @@
 {
-  "ipcMode": null,
-  "executionRoleArn": "arn:aws:iam::058264068878:role/ecsTaskExecutionRole",
+  "family": "TesteDevSecOpsJunto",
+  "executionRoleArn": "${EXECUTION_ROLE_ARN}",
+  "taskRoleArn": "${TASK_ROLE_ARN}",
+  "networkMode": "awsvpc",
   "containerDefinitions": [
     {
       "name": "app1",
-      "image": "${DOCKERHUB_USER}/testdevsecopsjunto:latest",
-      "cpu": 0,
-      "memory": null,
-      "memoryReservation": 128,
+      "image": "${DOCKER_IMAGE_URI}",
       "essential": true,
       "portMappings": [
         {
-          "hostPort": 0,
-          "protocol": "tcp",
-          "containerPort": 3000
+          "containerPort": 3000,
+          "protocol": "tcp"
         }
       ],
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {
-          "awslogs-group": "/ecs/testedevsecops",
-          "awslogs-region": "$AWS_DEFAULT_REGION",
+          "awslogs-group": "/ecs/TesteDevSecOpsJunto",
+          "awslogs-region": "us-east-1",
           "awslogs-stream-prefix": "ecs"
         }
       }
     }
   ],
-  "placementConstraints": [],
-  "memory": "2048",
-  "compatibilities": [
-    "EC2",
-    "FARGATE"
-  ],
-  "family": "testedevsecops",
-  "requiresCompatibilities": [
-    "FARGATE"
-  ],
-  "networkMode": "awsvpc",
-  "cpu": "1024"
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "networkConfiguration": {
+    "awsvpcConfiguration": {
+      "subnets": ["${SUBNET_ID_1}", "${SUBNET_ID_2}"],
+      "securityGroups": ["${SECURITY_GROUP_ID}"],
+      "assignPublicIp": "ENABLED"
+    }
+  }
 }

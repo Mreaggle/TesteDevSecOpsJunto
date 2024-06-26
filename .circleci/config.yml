@@ -54,7 +54,7 @@ jobs:
       - setup_remote_docker
       - run:
           name: Criar diretório de resultados do ESLint
-          command: mkdir -p scan-results/app2 && touch app2/eslint-report.txt  # Cria o arquivo dentro de app2
+          command: mkdir -p scan-results/app2 && touch app2/eslint-report.json  # Cria o arquivo dentro de app2
       
       - run:
           name: Instalar ESLint # Instala ESLint 
@@ -72,13 +72,13 @@ jobs:
           name: Listar arquivos em node_modules/.bin
           command: ls -la app2/node_modules/.bin
       - run:
-          name: Executar ESLint # Executa o ESLint e salva um relatório JSON
+          name: Executar ESLint # Executa a análise de código com ESLint e salva a saída em um arquivo
           command: |
             #!/bin/bash -eo pipefail 
             echo "Listando diretórios:" 
             ls -la  
             if [ -d "app2" ]; then 
-              cd app2 && ./node_modules/.bin/eslint src/** --fix --format json > scan-results/app2/eslint-report.json
+              cd app2 && ./node_modules/.bin/eslint src/** --fix --format json > ./eslint-report.json # Salva o relatório dentro de app2
             else
               echo "Erro: Diretório app2 não encontrado!" 
               exit 1 
@@ -159,45 +159,41 @@ jobs:
       - store_artifacts:  # Salva o relatório do Trivy como artefato
           path: scan-results/trivy-report.txt # Caminho relativo ao diretório de trabalho
 
-  deploy-app1: # Job para realizar o deploy da aplicação app1 no AWS ECS Fargate
+    deploy-app1:
     docker:
-      - image: cimg/aws:2022.06.1 # Imagem com AWS CLI
-    working_directory: ~/project 
+      - image: cimg/aws:2022.06.1
+    working_directory: ~/project
     steps:
-      - checkout # Faz o checkout do código-fonte do repositório
-      - setup_remote_docker # Configura um ambiente Docker remoto
+      - checkout
+
+      # Configura as credenciais da AWS
       - run:
-          name: Configurar AWS CLI # Configura as credenciais da AWS
+          name: Configurar AWS CLI
           command: |
             aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
             aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
             aws configure set default.region $AWS_DEFAULT_REGION
-      - run:  # Login no Docker Hub *antes* de iniciar o container
-          name: Login no Docker Hub
-          command: echo $DOCKERHUB_PASSWORD | docker login -u $DOCKERHUB_USER --password-stdin
+
+      # Constrói e envia a imagem Docker para o ECR
       - run:
-          name: Construir e enviar imagem Docker (app1) # Constrói e envia a imagem Docker
+          name: Construir e enviar imagem Docker (app1)
           command: |
-            #!/bin/bash -eo pipefail
-            echo "Listando diretórios:"
-            ls -la 
-            if [ -d "app1" ]; then 
-              cd app1 && docker build -t ${DOCKERHUB_USER}/testdevsecopsjunto:latest . 
-              docker push ${DOCKERHUB_USER}/testdevsecopsjunto:latest 
-            else
-              echo "Erro: Diretório app1 não encontrado!" 
-              exit 1 
-            fi
-      - run:
-          name: Imprimir task definition
-          command: cat ecs_task_definition.json
+            $(aws ecr get-login --no-include-email)
+            docker build -t ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/testdevsecopsjunto:latest .
+            docker push ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/testdevsecopsjunto:latest
+
+      # Registra a nova definição de tarefa ECS
       - run:
           name: Atualizar task definition com nova imagem
           command: |
-            aws ecs register-task-definition --cli-input-json file://ecs_task_definition.json --family testedevsecops 
+            sed -i "s|${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/testdevsecopsjunto:latest|058264068878.dkr.ecr.us-east-1.amazonaws.com/testdevsecopsjunto:latest|" ecs_task_definition.json
+            aws ecs register-task-definition --cli-input-json file://ecs_task_definition.json --family TesteDevSecOpsJunto
+
+      # Força um novo deployment da aplicação no ECS
       - run:
           name: Deploy da aplicação app1
-          command: aws ecs update-service --cluster TesteDevSecOpsJunto --service testedevsecops --force-new-deployment
+          command: |
+            aws ecs update-service --cluster TesteDevSecOpsJunto --service testedevsecops --force-new-deployment
 
 # Define o workflow para executar os jobs sequencialmente
 workflows:
