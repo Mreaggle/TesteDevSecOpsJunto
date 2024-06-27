@@ -1,223 +1,186 @@
 version: 2.1
 
+# Importação dos orbs necessários para o pipeline
+orbs:
+  aws-cli: circleci/aws-cli@3.1.1       # Orb para interagir com a AWS CLI
+  aws-ecs: circleci/aws-ecs@4.0.0       # Orb para interagir com o AWS ECS
+  node: circleci/node@5.0.2             # Orb para executar tarefas relacionadas ao Node.js
+  sonarcloud: sonarsource/sonarcloud@2.0.0 # Orb para integrar com o SonarCloud
+  snyk: snyk/snyk@5.0.0                 # Orb para integrar com o Snyk
+  anchore-engine: anchore/anchore-engine@1.9.0 # Orb para integrar com o Anchore Engine
+
+# Definição dos jobs que serão executados no pipeline
 jobs:
-  checkout: # Job para realizar o checkout do código e construir a imagem Docker
-    docker:
-      - image: cimg/node:18.12.0 # Imagem Node.js 18.12.0 next-gen
-    working_directory: ~/project # Define o diretório de trabalho
-    steps:
-      - run:
-          name: Instalar Java (versão mais recente) com sdkman
-          command: |
-            curl -s "https://get.sdkman.io" | bash
-            source "$HOME/.sdkman/bin/sdkman-init.sh"
-            sdk install java # Instala a versão mais recente do Java
-            sdk default java 21.0.3-tem  # Define a versão 21.0.3-tem como padrão
-      - setup_remote_docker
-      - checkout # Faz o checkout do código-fonte do repositório
-      - run:
-          name: Criar pasta de artefatos
-          command: mkdir -p scan-results # Cria a pasta scan-results se ela não existir
+  # --- Setup ---
+  checkout:                                   # Job responsável por fazer o checkout do código
+    docker:                                   # Define a imagem Docker a ser utilizada
+      - image: cimg/base:stable              # Imagem Docker básica do CircleCI
+    steps:                                    # Define os passos a serem executados dentro do job
+      - checkout                               # 2.1 - Checkout -> Checkout do Código: Faz o checkout do código do repositório
 
-  test-app1: # Job para executar os testes unitários da aplicação app1
+  # --- Test ---
+  test:                                       # Job responsável por executar os testes da aplicação
     docker:
-      - image: cimg/node:18.12.0
-    working_directory: ~/project
+      - image: cimg/node:18.12.0-alpine               # Imagem Docker com Node.js 18.12.0-alpine
     steps:
-      - checkout # Faz o checkout do código-fonte do repositório
+      - checkout
+      - node/install:                         # Instala as dependências do projeto Node.js
+          install-yarn: true
+          node-version: '18.12.0-alpine'
       - run:
-          name: Criar diretório de resultados de testes
-          command: mkdir -p test-results # Cria o diretório test-results
-      - run:
-          name: Executar testes # Executa os testes unitários da aplicação app1
-          command: |
-            #!/bin/bash -eo pipefail
-            echo "Listando diretórios:"
-            ls -la
-            if [ -d "app1" ]; then
-              cd app1 && npm test > ../test-results/test-report.txt # Redireciona a saída para o arquivo usando caminho relativo
-            else
-              echo "Erro: Diretório app1 não encontrado!"
-              exit 1
-            fi
-      - store_artifacts:  # Salva o relatório de testes como artefato
-          path: test-results # Diretório onde os relatórios de teste são salvos
-      - store_test_results: # Armazena os resultados dos testes para visualização no CircleCI
-          path: test-results # Diretório onde os relatórios de teste são salvos
+          name: Run tests                      # 2.2 - Test -> Teste com output "Fake test" ou o teste da sua aplicação: Executa os testes
+          command: |                          # Define o comando a ser executado
+            cd app1                           # Acessa o diretório da aplicação
+            npm install                      # Instala as dependências
+            npm test                         # Executa os testes
 
-  scan-app-app2: # Job para realizar análise estática de segurança da aplicação app2
+  # --- AppSec ---
+  scan-app-snyk:                             # Job responsável por executar a análise SAST com Snyk
     docker:
-      - image: cimg/node:18.12.0
-    working_directory: ~/project
+      - image: cimg/node:lts                  # Imagem Docker com Node.js LTS
     steps:
-      - checkout # Faz o checkout do código-fonte do repositório
-      - setup_remote_docker
-      - run:
-          name: Criar diretório de resultados do ESLint
-          command: mkdir -p scan-results/app2 && touch app2/eslint-report.json  # Cria o arquivo dentro de app2
-      
-      - run:
-          name: Criar diretório de resultados do ESLint
-          command: mkdir -p scan-results/app2 && touch app2/eslint-report.json  # Cria o arquivo dentro de app2
-      
-      - run:
-          name: Instalar ESLint # Instala ESLint 
-          command: |
-            #!/bin/bash -eo pipefail
-            echo "Listando diretórios:"
-            ls -la
-            if [ -d "app2" ]; then
-              cd app2 && npm install eslint@^7 --save-dev 
-            else
-              echo "Erro: Diretório app2 não encontrado!"
-              exit 1
-            fi
-      - run: # Verificar a instalação do ESLint
-          name: Listar arquivos em node_modules/.bin
-          command: ls -la app2/node_modules/.bin
-      - run:
-          name: Dar permissão de escrita ao diretório app2 # Adiciona permissões de escrita
-          command: chmod -R u+w app2
-      - run:
-          name: Executar ESLint # Executa a análise de código com ESLint e salva a saída em um arquivo
-          command: |
-            #!/bin/bash -eo pipefail 
-            echo "Listando diretórios:" 
-            ls -la  
-            if [ -d "app2" ]; then 
-              cd app2 && npx eslint src/** --fix --format json > ./eslint-report.json # Usa npx e salva o relatório dentro de app2
-            else
-              echo "Erro: Diretório app2 não encontrado!" 
-              exit 1 
-            fi
-      - run:
-          name: Instalar SonarQube Scanner # Instala o SonarQube Scanner
-          command: |
-            wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-6.0.0.4432-linux.zip
-            mv sonar-scanner-cli-6.0.0.4432-linux.zip sonarqube.zip
-            unzip sonarqube.zip 
-            sudo mv sonar-scanner-6.0.0.4432-linux /opt/sonar-scanner
-            sudo ln -s /opt/sonar-scanner/bin/sonar-scanner /usr/local/bin/sonar-scanner
-      - run:
-          name: Criar diretório e arquivo de resultados do SonarQube
-          command: mkdir -p scan-results/app2 && touch scan-results/app2/sonarqube-report.txt  # Cria o diretório e o arquivo
-      - run:
-          name: Executar SonarQube Scanner # Executa a análise com o SonarScanner e salva a saída em um arquivo
-          command: |
-            #!/bin/bash -eo pipefail
-            echo "Listando diretórios:"
-            ls -la
-            if [ -d "app2" ]; then
-              cd app2 && sonar-scanner -Dsonar.projectKey=mreaggle_app2 -Dsonar.organization=$SONAR_ORGANIZATION -Dsonar.host.url=https://sonarcloud.io -Dsonar.login=$SONAR_TOKEN -Dsonar.sources=.  # Adiciona -Dsonar.sources=.
-            else
-              echo "Erro: Diretório app2 não encontrado!"
-              exit 1
-            fi
-      - run:
-          name: Construir imagem Dependency-Check customizada
-          command: docker build -t ${DOCKERHUB_USER}/dependency-check:custom -f Dockerfile.dependencycheck . 
-      - run:
-          name: Login no Docker Hub
-          command: echo $DOCKERHUB_PASSWORD | docker login -u $DOCKERHUB_USER --password-stdin
-      - run:
-          name: Enviar imagem Dependency-Check customizada
-          command: docker push ${DOCKERHUB_USER}/dependency-check:custom
-      - run:
-          name: Executar OWASP Dependency-Check (app2)
-          command: |
-            docker run -d --name dependency-check -v $(pwd)/scan-results/app2:/reports ${DOCKERHUB_USER}/dependency-check:custom --project app2 --scan . --format HTML --out /reports/dependency-check-report.html 
-            docker wait dependency-check # Aguarda o container finalizar a execução
-            docker cp dependency-check:/reports/dependency-check-report.html scan-results/app2/  # Copia o relatório do container para o diretório app2
-      - run: # Adicionando ls para depuração
-          name: Listar arquivos em app2
-          command: ls -la scan-results/app2
-      - store_artifacts:
-          path: scan-results/app2 # Salva os artefatos do diretório scan-results/app2
+      - checkout
+      - run: npm ci                           # Instala as dependências do projeto
+      - snyk/scan:                            # Executa a análise SAST com Snyk
+          project-path: app2                  # Define o caminho para o projeto a ser analisado (app2)
 
-  scan-docker-app1: # Job para realizar análise de segurança da imagem Docker da app1
+  scan-app-sonarqube:                       # Job responsável por executar a análise estática com SonarQube
     docker:
-      - image: cimg/node:18.12.0
-    working_directory: ~/project
+      - image: cimg/node:latest               # Imagem Docker com a versão mais recente do Node.js
     steps:
-      - checkout # Faz o checkout do código-fonte do repositório
-      - setup_remote_docker # Configura um ambiente Docker remoto
+      - checkout
+      - sonarcloud/scan:                       # Executa a análise com SonarCloud
+          sonarcloud-parameters:
+            - sonar.projectKey: $SONAR_ORGANIZATION_testedevsecops_TesteDevSecOpsJunto # Define a chave do projeto no SonarCloud (Environment Variable)
+
+  scan-docker-anchore:                       # Job responsável por executar a análise de segurança da imagem Docker com Anchore Engine
+    executor: anchore/anchore_engine         # Define o executor como Anchore Engine
+    steps:
+      - setup_remote_docker                   # Configura o Docker para ser utilizado no job
+      - checkout
       - run:
-          name: Criar diretório de resultados do Trivy
-          command: mkdir -p scan-results # Cria o diretório scan-results
-      - run:
-          name: Construir imagem Docker # Constrói a imagem Docker 
-          command: |
-            #!/bin/bash -eo pipefail
-            echo "Listando diretórios:"
-            ls -la
-            if [ -d "app1" ]; then
-              cd app1 && docker build -t ${DOCKERHUB_USER}/testdevsecopsjunto:latest .
-            else
-              echo "Erro: Diretório app1 não encontrado!"
-              exit 1
-            fi
+          command: docker build -t "testdevsecopsjunto:latest" . # Constrói a imagem Docker
+          name: build container
+      - anchore/analyze_local_image:          # Analisa a imagem Docker localmente com Anchore Engine
+          dockerfile-path: ./app1/Dockerfile # Define o caminho para o Dockerfile
+          image-name: testdevsecopsjunto:latest # Define o nome da imagem a ser analisada
+          policy_bundle_file_path: .circleci/.anchore/policy_bundle.json # Define o caminho para o arquivo de políticas do Anchore
+          policy-failure: true               # Define que o job deve falhar se a política não for atendida
+          timeout: '500'                     # Define o tempo limite para a análise
+      - anchore/parse_reports                 # Analisa os relatórios gerados pelo Anchore Engine
+      - store_artifacts:                      # Armazena os relatórios como artefatos
+          path: anchore-reports               # Define o caminho para os relatórios
+
+  scan-docker-trivy:                        # Job responsável por executar a análise de segurança da imagem Docker com Trivy
+    docker:
+      - image: cimg/base:stable              # Imagem Docker básica do CircleCI
+    steps:
+      - checkout
       - run:
           name: Executar Trivy
           command: |
             #!/bin/bash -eo pipefail
-            docker pull aquasec/trivy:latest
-            docker run --rm aquasec/trivy:latest image ${DOCKERHUB_USER}/testdevsecopsjunto:latest > scan-results/trivy-report.txt
-            
-      - store_artifacts:  # Salva o relatório do Trivy como artefato
-          path: scan-results/trivy-report.txt # Caminho relativo ao diretório de trabalho
+            docker pull aquasec/trivy:latest # Faz o pull da imagem do Trivy
+            docker run --rm aquasec/trivy:latest image $DOCKERHUB_USER/testdevsecopsjunto:latest > scan-results/trivy-report.txt # Executa a análise com Trivy e salva o relatório em um arquivo
+      - store_artifacts:                      # Armazena o relatório como artefato
+          path: scan-results/trivy-report.txt # Define o caminho para o relatório
 
-  deploy-app1:
+  # --- Git Security ---
+  scan-git-trufflehog:                      # Job responsável por executar a análise de segurança do código-fonte com Trufflehog
     docker:
-      - image: cimg/aws:2022.06.1
-    working_directory: ~/project
+      - image: trufflesecurity/trufflehog:latest # Imagem Docker do Trufflehog
     steps:
       - checkout
-
-      # Configura as credenciais da AWS
       - run:
-          name: Configurar AWS CLI
+          name: Executar Trufflehog
           command: |
-            aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
-            aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
-            aws configure set default.region $AWS_DEFAULT_REGION
+            trufflehog github --repo https://github.com/seu-usuario/seu-repositorio > scan-results/trufflehog-report.txt # Executa o Trufflehog e salva o relatório em um arquivo
+      - store_artifacts:                      # Armazena o relatório como artefato
+          path: scan-results/trufflehog-report.txt # Define o caminho para o relatório
 
-      # Constrói e envia a imagem Docker para o ECR
+  scan-git-gitleaks:                        # Job responsável por executar a análise de segurança do código-fonte com GitLeaks
+    docker:
+      - image: zricethezav/gitleaks:latest # Imagem Docker do GitLeaks
+    steps:
+      - checkout
       - run:
-          name: Construir e enviar imagem Docker (app1)
+          name: Executar GitLeaks
           command: |
-            $(aws ecr get-login --no-include-email)
-            docker build -t ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/testdevsecopsjunto:latest .
-            docker push ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/testdevsecopsjunto:latest
+            gitleaks detect --source . > scan-results/gitleaks-report.txt # Executa o GitLeaks e salva o relatório em um arquivo
+      - store_artifacts:                      # Armazena o relatório como artefato
+          path: scan-results/gitleaks-report.txt # Define o caminho para o relatório
 
-      # Registra a nova definição de tarefa ECS
+  # --- Build & Deploy ---
+  build-and-push-image:                     # Job responsável por construir e enviar a imagem Docker para o registro
+    docker:
+      - image: cimg/base:stable              # Imagem Docker básica do CircleCI
+    steps:
+      - checkout
       - run:
-          name: Atualizar task definition com nova imagem
-          command: |
-            aws ecs register-task-definition --cli-input-json file://ecs_task_definition.json --family TesteDevSecOpsJunto
-
-      # Força um novo deployment da aplicação no ECS
+          name: Build Docker image             # 1 - Criar um Dockerfile para rodar uma aplicação a sua escolha: Constrói a imagem Docker
+          command: docker build -t $DOCKERHUB_USER/testdevsecopsjunto:latest . # Define o nome da imagem e a tag
       - run:
-          name: Deploy da aplicação app1
-          command: |
-            aws ecs update-service --cluster TesteDevSecOpsJunto --service testedevsecops --force-new-deployment
+          name: Log in to Docker Hub          # Faz o login no Docker Hub
+          command: echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USER" --password-stdin # Utiliza as variáveis de ambiente para autenticação
+      - run:
+          name: Push Docker image to Docker Hub # Envia a imagem Docker para o Docker Hub
+          command: docker push $DOCKERHUB_USER/testdevsecopsjunto:latest # Utiliza as variáveis de ambiente para definir o nome da imagem
 
-# Define o workflow para executar os jobs sequencialmente
+  deploy:                                     # Job responsável por realizar o deploy da aplicação
+    docker:
+      - image: cimg/python:3.10               # Imagem Docker com Python 3.10
+    steps:
+      - aws-cli/setup:
+          profile-name: default                # Define o perfil da AWS a ser utilizado
+      - aws-ecs/deploy-service-update:        # Atualiza o serviço no AWS ECS
+          cluster: $MY_APP_PREFIX-cluster      # Define o nome do cluster ECS
+          family: $MY_APP_PREFIX-service      # Define o nome do serviço ECS
+          task-definition: ./task-definition.json 
+          timeout: 300                        # Define o tempo limite para a atualização do serviço
+
+# Define o workflow do pipeline, que é uma sequência de jobs
 workflows:
-  build_and_deploy:
-    jobs:
-      - checkout # Executa o job 'checkout' primeiro
-      - test-app1: 
-          requires:
+  build-and-deploy:                          # Nome do workflow
+    jobs:                                     # Define os jobs que serão executados no workflow
+      - checkout:                             # Executa o job 'checkout'
+          context: TesteDevSecOps             # Define o contexto do CircleCI a ser utilizado
+      - test:                                # Executa o job 'test'
+          context: TesteDevSecOps             # Define o contexto do CircleCI a ser utilizado
+          requires:                             # Define que o job 'test' depende do job 'checkout'
             - checkout
-      - scan-app-app2: 
-          requires:
+      - scan-app-snyk:                        # Executa o job 'scan-app-snyk'
+          context: TesteDevSecOps             # Define o contexto do CircleCI a ser utilizado
+          requires:                             # Define que o job 'scan-app-snyk' depende do job 'checkout'
             - checkout
-      - scan-docker-app1: 
-          requires:
+      - scan-app-sonarqube:                  # Executa o job 'scan-app-sonarqube'
+          context: TesteDevSecOps             # Define o contexto do CircleCI a ser utilizado
+          requires:                             # Define que o job 'scan-app-sonarqube' depende do job 'checkout'
             - checkout
-      - deploy-app1: 
-          requires:
-            - test-app1
-            - scan-app-app2
-            - scan-docker-app1
-            
+      - scan-docker-anchore:                  # Executa o job 'scan-docker-anchore'
+          context: TesteDevSecOps             # Define o contexto do CircleCI a ser utilizado
+          requires:                             # Define que o job 'scan-docker-anchore' depende do job 'checkout'
+            - checkout
+      - scan-docker-trivy:                   # Executa o job 'scan-docker-trivy'
+          context: TesteDevSecOps             # Define o contexto do CircleCI a ser utilizado
+          requires:                             # Define que o job 'scan-docker-trivy' depende do job 'checkout'
+            - checkout
+      - scan-git-trufflehog:                 # Executa o job 'scan-git-trufflehog'
+          context: TesteDevSecOps             # Define o contexto do CircleCI a ser utilizado
+          requires:                             # Define que o job 'scan-git-trufflehog' depende do job 'checkout'
+            - checkout
+      - scan-git-gitleaks:                   # Executa o job 'scan-git-gitleaks'
+          context: TesteDevSecOps             # Define o contexto do CircleCI a ser utilizado
+          requires:                             # Define que o job 'scan-git-gitleaks' depende do job 'checkout'
+            - checkout
+      - build-and-push-image:                # Executa o job 'build-and-push-image'
+          requires:                             # Define que o job 'build-and-push-image' depende dos jobs de teste e segurança
+            - test
+            - scan-app-snyk
+            - scan-app-sonarqube
+            - scan-docker-anchore
+            - scan-docker-trivy
+            - scan-git-trufflehog
+            - scan-git-gitleaks
+      - deploy:                                # Executa o job 'deploy'
+          requires:                             # Define que o job 'deploy' depende do job 'build-and-push-image'
+            - build-and-push-image
