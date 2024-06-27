@@ -2,11 +2,11 @@ version: 2.1
 
 # Importação dos orbs necessários para o pipeline
 orbs:
-  aws-cli: circleci/aws-cli@3.1.1       # Orb para interagir com a AWS CLI
+  aws-cli: circleci/aws-cli@4.1.3       # Orb para interagir com a AWS CLI
   aws-ecs: circleci/aws-ecs@4.0.0       # Orb para interagir com o AWS ECS
-  node: circleci/node@5.0.2             # Orb para executar tarefas relacionadas ao Node.js
+  node: circleci/node@5.2.0             # Orb para executar tarefas relacionadas ao Node.js
   sonarcloud: sonarsource/sonarcloud@2.0.0 # Orb para integrar com o SonarCloud
-  snyk: snyk/snyk@5.0.0                 # Orb para integrar com o Snyk
+  snyk: snyk/snyk@2.1.0                 # Orb para integrar com o Snyk
   anchore-engine: anchore/anchore-engine@1.9.0 # Orb para integrar com o Anchore Engine
 
 # Definição dos jobs que serão executados no pipeline
