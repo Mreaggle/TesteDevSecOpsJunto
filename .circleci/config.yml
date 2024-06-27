@@ -184,3 +184,4 @@ workflows:
       - deploy:                                # Executa o job 'deploy'
           requires:                             # Define que o job 'deploy' depende do job 'build-and-push-image'
             - build-and-push-image
+            
