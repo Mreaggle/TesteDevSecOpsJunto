@@ -1,20 +1,26 @@
-# Imagem Node 18.12.0 Alpine para segurança, tamanho reduzido e versão LTS específica.
+# Utiliza uma imagem Node.js 18.12.0 Alpine como base (segurança, tamanho reduzido, versão específica)
 FROM node:18.12.0-alpine
 
-# Define o diretório de trabalho dentro do container.
+# Declara variáveis de ambiente para o build
+ARG NODE_ENV=production
+ENV NODE_ENV=${NODE_ENV}
+
+# Define o usuário não-root para executar o aplicativo (segurança)
+RUN addgroup -S appuser && adduser -S -G appuser appuser
+USER appuser
+
+# Define o diretório de trabalho dentro do container
 WORKDIR /app
 
-# Copia os arquivos package*.json primeiro para aproveitar o cache de camadas do Docker.
+# Copia apenas os arquivos necessários para o build (reduz o tamanho da imagem)
 COPY package*.json ./
+RUN npm install --omit=dev && npm cache clean --force
 
-# Copia o restante do código da aplicação para o container.
-COPY . ./
+# Copia o restante do código da aplicação para o container
+COPY --chown=appuser:appuser . .
 
-# Instala as dependências da aplicação.
-RUN npm install
-
-# Expõe a porta 3000 onde a aplicação estará ouvindo.
+# Define a porta que a aplicação irá escutar
 EXPOSE 3000
 
-# Comando para iniciar a aplicação.
+# Comando para iniciar a aplicação em modo produção
 CMD [ "npm", "start" ]
