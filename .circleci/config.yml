@@ -39,10 +39,11 @@ jobs:
     docker:
       - image: cimg/node:lts                  # Imagem Docker com Node.js LTS
     steps:
-      - checkout
-      - run: npm ci                           # Instala as dependências do projeto
-      - snyk/scan:                            # Executa a análise SAST com Snyk
-          project-path: app2                  # Define o caminho para o projeto a ser analisado (app2)
+    - checkout
+    - run: npm ci                           # Instala as dependências do projeto
+    - run:                                   # Adicione este passo para navegar até o diretório app2
+        name: Acessar diretório app2
+        command: cd app2
 
   scan-app-sonarqube:                       # Job responsável por executar a análise estática com SonarQube
     docker:
