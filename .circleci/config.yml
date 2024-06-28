@@ -49,9 +49,9 @@ jobs:
             npm test                         # Executa os testes
 
   # --- AppSec ---
-  scan-app2-snyk:                             # Job responsável por executar a análise SAST com Snyk
+  scan-app2-snyk:                             # Job responsável por executar a análise SAST com Snyk em app2
     type: docker
-    docker:                                 # Mova a chave 'docker' para dentro do job
+    docker:                                 
       - image: cimg/node:lts
     steps:
       - checkout
@@ -65,7 +65,7 @@ jobs:
 
   scan-app1-snyk:                          # Job responsável por executar a análise SAST com Snyk em app1
     type: docker
-    docker:                                 # Mova a chave 'docker' para dentro do job
+    docker:                                 
       - image: cimg/node:lts
     steps:
       - checkout
@@ -79,7 +79,7 @@ jobs:
 
   scan-app-sonarqube:                       # Job responsável por executar a análise estática com SonarQube
     type: docker
-    docker:                                 # Mova a chave 'docker' para dentro do job
+    docker:                                 
       - image: cimg/node:latest
     steps:
       - checkout
@@ -87,20 +87,20 @@ jobs:
           sonar.projectKey: $SONAR_ORGANIZATION_testedevsecops_TesteDevSecOpsJunto
 
   scan-docker-anchore:                       # Job responsável por executar a análise de segurança da imagem Docker com Anchore Engine
-    executor: anchore/anchore_engine
+    executor: anchore-engine/anchore_engine
     steps:
       - setup_remote_docker
       - checkout
       - run:
           command: docker build -t "testdevsecopsjunto:latest" .
           name: build container
-      - anchore/analyze_local_image:
+      - anchore-engine/analyze_local_image:
           dockerfile-path: ./app1/Dockerfile
           image-name: testdevsecopsjunto:latest
           policy_bundle_file_path: .circleci/.anchore/policy_bundle.json
           policy-failure: true
           timeout: '500'
-      - anchore/parse_reports
+      - anchore-engine/parse_reports
       - store_artifacts:
           path: anchore-reports
 
