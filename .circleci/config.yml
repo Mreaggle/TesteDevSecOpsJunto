@@ -6,8 +6,22 @@ orbs:
   aws-ecs: circleci/aws-ecs@4.0.0       # Orb para interagir com o AWS ECS
   node: circleci/node@5.2.0             # Orb para executar tarefas relacionadas ao Node.js
   sonarcloud: sonarsource/sonarcloud@2.0.0 # Orb para integrar com o SonarCloud
-  snyk: snyk/snyk@2.1.0                 # Orb para integrar com o Snyk
+  snyk: snyk/snyk@1.0.0                 # Orb para integrar com o Snyk (versão atualizada)
   anchore-engine: anchore/anchore-engine@1.9.0 # Orb para integrar com o Anchore Engine
+
+commands:
+  build-and-push-image:
+    description: Build and push Docker image to Docker Hub
+    steps:
+      - run:
+          name: Build Docker image
+          command: docker build -t $DOCKERHUB_USER/testdevsecopsjunto:latest .
+      - run:
+          name: Log in to Docker Hub
+          command: echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USER" --password-stdin
+      - run:
+          name: Push Docker image to Docker Hub
+          command: docker push $DOCKERHUB_USER/testdevsecopsjunto:latest
 
 # Definição dos jobs que serão executados no pipeline
 jobs:
@@ -39,11 +53,12 @@ jobs:
     docker:
       - image: cimg/node:lts                  # Imagem Docker com Node.js LTS
     steps:
-    - checkout
-    - run: npm ci                           # Instala as dependências do projeto
-    - run:                                   # Adicione este passo para navegar até o diretório app2
-        name: Acessar diretório app2
-        command: cd app2
+      - checkout
+      - run: npm ci                           # Instala as dependências do projeto
+      - run:                                   # Adicione este passo para navegar até o diretório app2
+          name: Acessar diretório app2
+          command: cd app2
+      - snyk/scan:                            # Executa a análise SAST com Snyk (sem o parâmetro 'project-path')
 
   scan-app-sonarqube:                       # Job responsável por executar a análise estática com SonarQube
     docker:
@@ -51,8 +66,7 @@ jobs:
     steps:
       - checkout
       - sonarcloud/scan:                       # Executa a análise com SonarCloud
-          sonarcloud-parameters:
-            - sonar.projectKey: $SONAR_ORGANIZATION_testedevsecops_TesteDevSecOpsJunto # Define a chave do projeto no SonarCloud (Environment Variable)
+          projectKey: $SONAR_ORGANIZATION_testedevsecops_TesteDevSecOpsJunto # Define a chave do projeto no SonarCloud (Environment Variable)
 
   scan-docker-anchore:                       # Job responsável por executar a análise de segurança da imagem Docker com Anchore Engine
     executor: anchore/anchore_engine         # Define o executor como Anchore Engine
@@ -117,15 +131,7 @@ jobs:
       - image: cimg/base:stable              # Imagem Docker básica do CircleCI
     steps:
       - checkout
-      - run:
-          name: Build Docker image             # 1 - Criar um Dockerfile para rodar uma aplicação a sua escolha: Constrói a imagem Docker
-          command: docker build -t $DOCKERHUB_USER/testdevsecopsjunto:latest . # Define o nome da imagem e a tag
-      - run:
-          name: Log in to Docker Hub          # Faz o login no Docker Hub
-          command: echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USER" --password-stdin # Utiliza as variáveis de ambiente para autenticação
-      - run:
-          name: Push Docker image to Docker Hub # Envia a imagem Docker para o Docker Hub
-          command: docker push $DOCKERHUB_USER/testdevsecopsjunto:latest # Utiliza as variáveis de ambiente para definir o nome da imagem
+      - build-and-push-image                # Chama o comando personalizado
 
   deploy:                                     # Job responsável por realizar o deploy da aplicação
     docker:
@@ -134,9 +140,15 @@ jobs:
       - aws-cli/setup:
           profile-name: default                # Define o perfil da AWS a ser utilizado
       - aws-ecs/deploy-service-update:        # Atualiza o serviço no AWS ECS
+          auth:                                # Configuração de autenticação (exemplo com OIDC)
+            - aws-cli/setup:
+                profile: OIDC-USER
+                role_arn: $ROLE_ARN
           cluster: $MY_APP_PREFIX-cluster      # Define o nome do cluster ECS
           family: $MY_APP_PREFIX-service      # Define o nome do serviço ECS
           task-definition: ./task-definition.json 
+          container_image_name_updates: 'container=testdevsecopsjunto-container,tag=latest' # Define a tag da imagem a ser utilizada
+          verify_revision_is_deployed: true   # Verifica se a revisão foi implantada corretamente
           timeout: 300                        # Define o tempo limite para a atualização do serviço
 
 # Define o workflow do pipeline, que é uma sequência de jobs
@@ -185,4 +197,3 @@ workflows:
       - deploy:                                # Executa o job 'deploy'
           requires:                             # Define que o job 'deploy' depende do job 'build-and-push-image'
             - build-and-push-image
-            
