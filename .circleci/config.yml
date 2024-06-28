@@ -27,10 +27,10 @@ commands:
 jobs:
   # --- Setup ---
   checkout:                                   # Job responsável por fazer o checkout do código
-    docker:                                   # Define a imagem Docker a ser utilizada
-      - image: cimg/base:stable              # Imagem Docker básica do CircleCI
-    steps:                                    # Define os passos a serem executados dentro do job
-      - checkout                               # 2.1 - Checkout -> Checkout do Código: Faz o checkout do código do repositório
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - checkout
 
   # --- Test ---
   test:                                       # Job responsável por executar os testes da aplicação
@@ -49,33 +49,34 @@ jobs:
             npm test                         # Executa os testes
 
   # --- AppSec ---
+  # --- AppSec ---
   scan-app2-snyk:                             # Job responsável por executar a análise SAST com Snyk
-  type: docker                             # Define o tipo de executor como 'docker'
-  docker:
-    - image: cimg/node:lts                  # Imagem Docker com Node.js LTS
-  steps:
-    - checkout
-    - run: npm ci                           # Instala as dependências do projeto
-    - run:                                   # Adicione este passo para navegar até o diretório app2
-        name: Acessar diretório app2
-        command: cd app2
-    - run:                                   # Encapsule o comando 'snyk/scan' em um passo 'run'
-        name: Executar Snyk Scan
-        command: snyk/scan                  # Comando do orb 'snyk'
+    type: docker
+    docker:
+      - image: cimg/node:lts
+    steps:
+      - checkout                             # Mantenha apenas esta linha 'checkout'
+      - run: npm ci
+      - run:
+          name: Acessar diretório app2
+          command: cd app2
+      - run:
+          name: Executar Snyk Scan
+          command: snyk/scan
 
   scan-app1-snyk:                          # Job responsável por executar a análise SAST com Snyk em app1
-  type: docker
-  docker:
-    - image: cimg/node:lts
-  steps:
-    - checkout
-    - run: npm ci
-    - run:
-        name: Acessar diretório app1
-        command: cd app1
-    - run:
-        name: Executar Snyk Scan
-        command: snyk/scan
+    type: docker
+    docker:
+      - image: cimg/node:lts
+    steps:
+      - checkout
+      - run: npm ci
+      - run:
+          name: Acessar diretório app1
+          command: cd app1
+      - run:
+          name: Executar Snyk Scan
+          command: snyk/scan
   
   scan-app-sonarqube:                       # Job responsável por executar a análise estática com SonarQube
     docker:
