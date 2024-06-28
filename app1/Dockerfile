@@ -17,7 +17,7 @@ COPY package*.json ./
 RUN npm install --omit=dev && npm cache clean --force
 
 # Copia o restante do código da aplicação para o container
-COPY --chown=appuser:appuser . .
+COPY .
 
 # Define a porta que a aplicação irá escutar
 EXPOSE 3000
