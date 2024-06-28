@@ -79,12 +79,12 @@ jobs:
           command: snyk/scan
   
   scan-app-sonarqube:                       # Job responsável por executar a análise estática com SonarQube
-    docker:
-      - image: cimg/node:latest               # Imagem Docker com a versão mais recente do Node.js
-    steps:
-      - checkout
-      - sonarcloud/scan:                       # Executa a análise com SonarCloud
-          projectKey: $SONAR_ORGANIZATION_testedevsecops_TesteDevSecOpsJunto # Define a chave do projeto no SonarCloud (Environment Variable)
+  docker:
+    - image: cimg/node:latest               # Imagem Docker com a versão mais recente do Node.js
+  steps:
+    - checkout
+    - sonarcloud/scan:                       # Executa a análise com SonarCloud
+        sonar.projectKey: $SONAR_ORGANIZATION_testedevsecops_TesteDevSecOpsJunto # Define a chave do projeto no SonarCloud (Environment Variable)
 
   scan-docker-anchore:                       # Job responsável por executar a análise de segurança da imagem Docker com Anchore Engine
     executor: anchore/anchore_engine         # Define o executor como Anchore Engine
