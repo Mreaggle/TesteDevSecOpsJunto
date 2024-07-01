@@ -89,9 +89,7 @@ jobs:
       - run:
           name: Acessar diretório app1
           command: cd app1                   # Navega até o diretório do projeto app1
-      - run:
-          name: Executar Snyk Scan
-          command: snyk/scan                  # Executa a análise SAST com Snyk - identifica vulnerabilidades no código-fonte
+    snyk/scan:                  # Executa a análise SAST com Snyk - identifica vulnerabilidades no código-fonte
 
   scan-app2-snyk:                             # Job responsável por executar a análise SAST com Snyk em app2
     docker:                                 
