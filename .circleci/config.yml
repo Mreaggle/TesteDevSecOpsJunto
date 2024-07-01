@@ -102,7 +102,7 @@ jobs:
           name: Acessar diretório app2
           command: cd app2                   # Navega até o diretório do projeto app1
     snyk/scan:                  # Executa a análise SAST com Snyk - identifica vulnerabilidades no código-fonte
-    
+
   scan-app-sonarqube:                       # Job responsável por executar a análise estática com SonarQube
     docker:                                 
       - image: cimg/node:18.12.0             # Imagem Docker com a versão específica do Node.js
@@ -110,8 +110,9 @@ jobs:
       - checkout
       - run:
           name: Acessar diretório app1
-          command: cd app1                   # Navega até o diretório do projeto app1
-          command: sonar-scanner -Dsonar.projectKey=$SONAR_PROJECT_KEY -Dsonar.organization=myOrganization -X
+          command: |
+            cd app1                   # Navega até o diretório do projeto app1
+            sonar-scanner -Dsonar.projectKey=$SONAR_PROJECT_KEY -Dsonar.organization=$SONAR_ORGANIZATION -X
       - sonarcloud/scan:                      # Executa a análise com SonarCloud - verifica a qualidade do código e identifica problemas de segurança
           sonar_token_variable_name: SONAR_TOKEN # Define o nome da variável de ambiente que contém o token do SonarCloud
 
