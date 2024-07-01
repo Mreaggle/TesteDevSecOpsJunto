@@ -50,7 +50,6 @@ jobs:
 
   # --- AppSec ---
   scan-app2-snyk:                             # Job responsável por executar a análise SAST com Snyk em app2
-    type: docker
     docker:                                 
       - image: cimg/node:lts                  # Imagem Docker com Node.js LTS - ambiente estável para a análise
     steps:
@@ -62,7 +61,6 @@ jobs:
       - snyk/scan:                            # Executa a análise SAST com Snyk - identifica vulnerabilidades no código-fonte
 
   scan-app1-snyk:                          # Job responsável por executar a análise SAST com Snyk em app1
-    type: docker
     docker:                                 
       - image: cimg/node:lts
     steps:
@@ -76,7 +74,6 @@ jobs:
           command: snyk/scan                  # Executa a análise SAST com Snyk - identifica vulnerabilidades no código-fonte
 
   scan-app-sonarqube:                       # Job responsável por executar a análise estática com SonarQube
-    type: docker
     docker:                                 
       - image: cimg/node:latest               # Imagem Docker com a versão mais recente do Node.js
     steps:
@@ -100,7 +97,6 @@ jobs:
           path: anchore-reports               # Define o caminho para os relatórios               # Define o caminho para os relatórios
 
   scan-docker-trivy:                        # Job responsável por executar a análise de segurança da imagem Docker com Trivy
-    type: docker
     docker:
       - image: cimg/base:stable              # Imagem Docker básica do CircleCI - leve e eficiente
     steps:
