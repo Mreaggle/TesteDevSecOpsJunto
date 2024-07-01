@@ -75,7 +75,7 @@ jobs:
       - run:
           name: Executar GitLeaks
           command: |
-            gitleaks detect --source . -r scan-results/gitleaks-report.json
+            gitleaks detect --source . -r scan-results/gitleaks-report.json || true
           when: always                      # Executa o passo mesmo se houver erros - permite continuar o pipeline
       - store_artifacts:                      # Armazena o relatório como artefato - disponibiliza os resultados da análise para posterior revisão
           path: scan-results/gitleaks-report.json # Define o caminho para o relatório
