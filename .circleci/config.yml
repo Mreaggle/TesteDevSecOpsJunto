@@ -3,6 +3,7 @@ version: 2.1
 # Importação dos orbs necessários para o pipeline
 orbs:
   aws-cli: circleci/aws-cli@4.1.3       # Orb para interagir com a AWS CLI - facilita a autenticação e execução de comandos da AWS
+  aws-ecs: circleci/aws-ecs@4.0.0       # Orb para interagir com o AWS ECS - simplifica o deploy e gerenciamento de serviços ECS
   node: circleci/node@5.2.0             # Orb para executar tarefas relacionadas ao Node.js - fornece ambiente Node.js e gerenciamento de pacotes
   sonarcloud: sonarsource/sonarcloud@2.0.0 # Orb para integrar com o SonarCloud - automatiza a análise de código estático
   snyk: snyk/snyk@2.1.0                 # Orb para integrar com o Snyk - automatiza a análise de vulnerabilidades de segurança
@@ -49,35 +50,15 @@ jobs:
             npm test                         # Executa os testes
 
   # --- AppSec ---
-  scan-app2-snyk:                             # Job responsável por executar a análise SAST com Snyk em app2
+  scan-app-snyk:                             # Job responsável por executar a análise SAST com Snyk
     docker:                                 
-      - image: cimg/node:lts
+      - image: cimg/node:lts                  # Imagem Docker com Node.js LTS - ambiente estável para a análise
     steps:
       - checkout
       - run: npm ci                           # Instala as dependências do projeto
-      - run:
-          name: Acessar diretório app2
-          command: cd app2                   # Navega até o diretório do projeto app2
       - snyk/scan:                            # Executa a análise SAST com Snyk - identifica vulnerabilidades no código-fonte
-          # Exemplo de parâmetros:
-          severity-threshold: high
-          monitor-on-build: true
-
-  scan-app1-snyk:                          # Job responsável por executar a análise SAST com Snyk em app1
-    docker:                                 
-      - image: cimg/node:lts
-    steps:
-      - checkout
-      - run: npm ci
-      - run:
-          name: Acessar diretório app1
-          command: cd app1                   # Navega até o diretório do projeto app1
-      - run:
-          name: Executar Snyk Scan
-          command: snyk/scan:                            # Executa a análise SAST com Snyk - identifica vulnerabilidades no código-fonte
-          # Exemplo de parâmetros:
-          severity-threshold: high
-          monitor-on-build: true
+          severity-threshold: high            # Define o limite de severidade para reportar vulnerabilidades
+          monitor-on-build: true             # Habilita o monitoramento contínuo do projeto no Snyk
 
   scan-app-sonarqube:                       # Job responsável por executar a análise estática com SonarQube
     docker:                                 
@@ -100,7 +81,7 @@ jobs:
           timeout: '500'                     # Define o tempo limite para a análise - previne execuções longas
       - anchore-engine/parse_reports                 # Analisa os relatórios gerados pelo Anchore Engine - extrai informações relevantes
       - store_artifacts:                      # Armazena os relatórios como artefatos - disponibiliza os resultados da análise para posterior revisão
-          path: anchore-reports               # Define o caminho para os relatórios               # Define o caminho para os relatórios
+          path: anchore-reports               # Define o caminho para os relatórios
 
   scan-docker-trivy:                        # Job responsável por executar a análise de segurança da imagem Docker com Trivy
     docker:
@@ -118,7 +99,6 @@ jobs:
 
   # --- Git Security ---
   scan-git-trufflehog:                      # Job responsável por executar a análise de segurança do código-fonte com Trufflehog - procura por segredos no histórico do Git
-    type: docker
     docker:
       - image: trufflesecurity/trufflehog:latest # Imagem Docker do Trufflehog
     steps:
@@ -131,7 +111,6 @@ jobs:
           path: scan-results/trufflehog-report.txt # Define o caminho para o relatório
 
   scan-git-gitleaks:                        # Job responsável por executar a análise de segurança do código-fonte com GitLeaks - procura por vazamentos de credenciais no código-fonte
-    type: docker
     docker:
       - image: zricethezav/gitleaks:latest # Imagem Docker do GitLeaks
     steps:
@@ -181,13 +160,9 @@ workflows:
           context: TesteDevSecOps             # Define o contexto do CircleCI a ser utilizado
           requires:                             # Define que o job 'test' depende do job 'checkout' - garante que o código-fonte esteja disponível para os testes
             - checkout
-      - scan-app2-snyk:                        # Executa o job 'scan-app2-snyk' - realiza a análise de segurança do código-fonte do app2
+      - scan-app-snyk:                        # Executa o job 'scan-app-snyk' - realiza a análise de segurança do código-fonte
           context: TesteDevSecOps             # Define o contexto do CircleCI a ser utilizado
-          requires:                             # Define que o job 'scan-app2-snyk' depende do job 'checkout' - garante que o código-fonte esteja disponível para a análise
-            - checkout
-      - scan-app1-snyk:                        # Executa o job 'scan-app1-snyk' - realiza a análise de segurança do código-fonte do app1
-          context: TesteDevSecOps             # Define o contexto do CircleCI a ser utilizado
-          requires:                             # Define que o job 'scan-app1-snyk' depende do job 'checkout' - garante que o código-fonte esteja disponível para a análise
+          requires:                             # Define que o job 'scan-app-snyk' depende do job 'checkout' - garante que o código-fonte esteja disponível para a análise
             - checkout
       - scan-app-sonarqube:                  # Executa o job 'scan-app-sonarqube' - realiza a análise estática de código com SonarQube
           context: TesteDevSecOps             # Define o contexto do CircleCI a ser utilizado
@@ -212,8 +187,7 @@ workflows:
       - build-and-push-image:                # Executa o job 'build-and-push-image' - constrói e envia a imagem Docker para o registro
           requires:                             # Define que o job 'build-and-push-image' depende dos jobs de teste e segurança - garante que a aplicação seja testada e verificada antes do deploy
             - test
-            - scan-app2-snyk
-            - scan-app1-snyk
+            - scan-app-snyk
             - scan-app-sonarqube
             - scan-docker-anchore
             - scan-docker-trivy
