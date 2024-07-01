@@ -60,7 +60,7 @@ jobs:
       - run:
           name: Executar Trufflehog
           command: |
-            trufflehog github --repo https://github.com/Mreaggle/TesteDevSecOpsJunto > scan-results/trufflehog-report.txt # Executa o Trufflehog e salva o relatório em um arquivo
+            trufflehog github --repo https://github.com/Mreaggle/TesteDevSecOpsJunto > scan-results/trufflehog-report.txt
       - store_artifacts:                      # Armazena o relatório como artefato - disponibiliza os resultados da análise para posterior revisão
           path: scan-results/trufflehog-report.txt # Define o caminho para o relatório
 
@@ -75,7 +75,7 @@ jobs:
       - run:
           name: Executar GitLeaks
           command: |
-            gitleaks detect --source . -r scan-results/gitleaks-report.json # Salva a saída em um arquivo JSON
+            gitleaks detect --source . -r scan-results/gitleaks-report.json
           when: always                      # Executa o passo mesmo se houver erros - permite continuar o pipeline
       - store_artifacts:                      # Armazena o relatório como artefato - disponibiliza os resultados da análise para posterior revisão
           path: scan-results/gitleaks-report.json # Define o caminho para o relatório
