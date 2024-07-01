@@ -2,43 +2,44 @@ version: 2.1
 
 # Importação dos orbs necessários para o pipeline
 orbs:
-  aws-cli: circleci/aws-cli@4.1.3       # Orb para interagir com a AWS CLI
-  aws-ecs: circleci/aws-ecs@4.0.0       # Orb para interagir com o AWS ECS
-  node: circleci/node@5.2.0             # Orb para executar tarefas relacionadas ao Node.js
-  sonarcloud: sonarsource/sonarcloud@2.0.0 # Orb para integrar com o SonarCloud
-  snyk: snyk/snyk@1.0.0                 # Orb para integrar com o Snyk (versão atualizada)
-  anchore-engine: anchore/anchore-engine@1.9.0 # Orb para integrar com o Anchore Engine
+  aws-cli: circleci/aws-cli@4.1.3       # Orb para interagir com a AWS CLI - facilita a autenticação e execução de comandos da AWS
+  aws-ecs: circleci/aws-ecs@4.0.0       # Orb para interagir com o AWS ECS - simplifica o deploy e gerenciamento de serviços ECS
+  node: circleci/node@5.2.0             # Orb para executar tarefas relacionadas ao Node.js - fornece ambiente Node.js e gerenciamento de pacotes
+  sonarcloud: sonarsource/sonarcloud@2.0.0 # Orb para integrar com o SonarCloud - automatiza a análise de código estático
+  snyk: snyk/snyk@2.1.0                 # Orb para integrar com o Snyk - automatiza a análise de vulnerabilidades de segurança
+  anchore-engine: anchore/anchore-engine@1.9.0 # Orb para integrar com o Anchore Engine - automatiza a análise de segurança de imagens Docker
 
+# Define comandos personalizados para reutilização de código
 commands:
   build-and-push-image:
-    description: Build and push Docker image to Docker Hub
+    description: Build and push Docker image to Docker Hub # Descrição do comando
     steps:
       - run:
-          name: Build Docker image
-          command: docker build -t $DOCKERHUB_USER/testdevsecopsjunto:latest .
+          name: Build Docker image # Nome do passo
+          command: docker build -t $DOCKERHUB_USER/testdevsecopsjunto:latest . # Comando para construir a imagem Docker - usa variável de ambiente para o nome da imagem
       - run:
           name: Log in to Docker Hub
-          command: echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USER" --password-stdin
+          command: echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USER" --password-stdin # Faz login no Docker Hub usando variáveis de ambiente para credenciais
       - run:
           name: Push Docker image to Docker Hub
-          command: docker push $DOCKERHUB_USER/testdevsecopsjunto:latest
+          command: docker push $DOCKERHUB_USER/testdevsecopsjunto:latest # Envia a imagem Docker para o Docker Hub - usa variável de ambiente para o nome da imagem
 
 # Definição dos jobs que serão executados no pipeline
 jobs:
   # --- Setup ---
   checkout:                                   # Job responsável por fazer o checkout do código
     docker:                                   # Define a imagem Docker a ser utilizada
-      - image: cimg/base:stable              # Imagem Docker básica do CircleCI
+      - image: cimg/base:stable              # Imagem Docker básica do CircleCI - leve e eficiente
     steps:                                    # Define os passos a serem executados dentro do job
       - checkout                               # 2.1 - Checkout -> Checkout do Código: Faz o checkout do código do repositório
 
   # --- Test ---
   test:                                       # Job responsável por executar os testes da aplicação
     docker:
-      - image: cimg/node:18.12.0-alpine               # Imagem Docker com Node.js 18.12.0-alpine
+      - image: cimg/node:18.12.0-alpine               # Imagem Docker com Node.js 18.12.0-alpine - ambiente consistente para testes
     steps:
       - checkout
-      - node/install:                         # Instala as dependências do projeto Node.js
+      - node/install:                         # Instala as dependências do projeto Node.js - garante que as dependências estejam presentes
           install-yarn: true
           node-version: '18.12.0-alpine'
       - run:
@@ -52,16 +53,14 @@ jobs:
   scan-app2-snyk:                             # Job responsável por executar a análise SAST com Snyk em app2
     type: docker
     docker:                                 
-      - image: cimg/node:lts
+      - image: cimg/node:lts                  # Imagem Docker com Node.js LTS - ambiente estável para a análise
     steps:
       - checkout
-      - run: npm ci
+      - run: npm ci                           # Instala as dependências do projeto
       - run:
           name: Acessar diretório app2
-          command: cd app2
-      - run:
-          name: Executar Snyk Scan
-          command: snyk/scan
+          command: cd app2                   # Navega até o diretório do projeto app2
+      - snyk/scan:                            # Executa a análise SAST com Snyk - identifica vulnerabilidades no código-fonte
 
   scan-app1-snyk:                          # Job responsável por executar a análise SAST com Snyk em app1
     type: docker
@@ -72,144 +71,144 @@ jobs:
       - run: npm ci
       - run:
           name: Acessar diretório app1
-          command: cd app1
+          command: cd app1                   # Navega até o diretório do projeto app1
       - run:
           name: Executar Snyk Scan
-          command: snyk/scan
+          command: snyk/scan                  # Executa a análise SAST com Snyk - identifica vulnerabilidades no código-fonte
 
   scan-app-sonarqube:                       # Job responsável por executar a análise estática com SonarQube
     type: docker
     docker:                                 
-      - image: cimg/node:latest
+      - image: cimg/node:latest               # Imagem Docker com a versão mais recente do Node.js
     steps:
       - checkout
-      - sonarcloud/scan:
-          sonar.projectKey: $SONAR_ORGANIZATION_testedevsecops_TesteDevSecOpsJunto
+      - sonarcloud/scan:                       # Executa a análise com SonarCloud - verifica a qualidade do código e identifica problemas de segurança
+          projectKey: $SONAR_ORGANIZATION_testedevsecops_TesteDevSecOpsJunto # Define a chave do projeto no SonarCloud (Environment Variable)
 
   scan-docker-anchore:                       # Job responsável por executar a análise de segurança da imagem Docker com Anchore Engine
-  executor: anchore-engine/anchore_engine         # Define o executor como Anchore Engine
-  steps:
-    - setup_remote_docker                   # Configura o Docker para ser utilizado no job
-    - checkout
-    - run:
-        command: docker build -t "testdevsecopsjunto:latest" . # Constrói a imagem Docker
-        name: build container
-    - anchore-engine/analyze_local_image:          # Analisa a imagem Docker localmente com Anchore Engine
-        image_name: $DOCKERHUB_USER/testdevsecopsjunto:latest # Define o nome da imagem a ser analisada
-        # Remova os parâmetros 'policy-failure' e 'dockerfile-path'
-        timeout: '500'                     # Define o tempo limite para a análise
-    - anchore-engine/parse_reports                 
-    - store_artifacts:                      # Armazena os relatórios como artefatos
-        path: anchore-reports               # Define o caminho para os relatórios
+    executor: anchore/anchore_engine         # Define o executor como Anchore Engine - ambiente especializado para análise de imagens
+    steps:
+      - setup_remote_docker                   # Configura o Docker para ser utilizado no job
+      - checkout
+      - run:
+          command: docker build -t "testdevsecopsjunto:latest" . # Constrói a imagem Docker - cria a imagem para análise
+          name: build container
+      - anchore/analyze_local_image:          # Analisa a imagem Docker localmente com Anchore Engine - identifica vulnerabilidades e verifica conformidade com políticas
+          image_name: $DOCKERHUB_USER/testdevsecopsjunto:latest # Define o nome da imagem a ser analisada
+          timeout: '500'                     # Define o tempo limite para a análise - previne execuções longas
+      - anchore/parse_reports                 # Analisa os relatórios gerados pelo Anchore Engine - extrai informações relevantes
+      - store_artifacts:                      # Armazena os relatórios como artefatos - disponibiliza os resultados da análise para posterior revisão
+          path: anchore-reports               # Define o caminho para os relatórios
 
-  scan-docker-trivy:
+  scan-docker-trivy:                        # Job responsável por executar a análise de segurança da imagem Docker com Trivy
     type: docker
     docker:
-      - image: cimg/base:stable
+      - image: cimg/base:stable              # Imagem Docker básica do CircleCI - leve e eficiente
     steps:
       - checkout
       - run:
           name: Executar Trivy
           command: |
             #!/bin/bash -eo pipefail
-            docker pull aquasec/trivy:latest
-            docker run --rm aquasec/trivy:latest image $DOCKERHUB_USER/testdevsecopsjunto:latest > scan-results/trivy-report.txt
-      - store_artifacts:
-          path: scan-results/trivy-report.txt
+            docker pull aquasec/trivy:latest # Faz o pull da imagem do Trivy - garante que a versão mais recente seja utilizada
+            docker run --rm aquasec/trivy:latest image $DOCKERHUB_USER/testdevsecopsjunto:latest > scan-results/trivy-report.txt # Executa a análise com Trivy e salva o relatório em um arquivo - usa variável de ambiente para o nome da imagem
+      - store_artifacts:                      # Armazena o relatório como artefato - disponibiliza os resultados da análise para posterior revisão
+          path: scan-results/trivy-report.txt # Define o caminho para o relatório
 
   # --- Git Security ---
-  scan-git-trufflehog:
+  scan-git-trufflehog:                      # Job responsável por executar a análise de segurança do código-fonte com Trufflehog - procura por segredos no histórico do Git
     type: docker
     docker:
-      - image: trufflesecurity/trufflehog:latest
+      - image: trufflesecurity/trufflehog:latest # Imagem Docker do Trufflehog
     steps:
       - checkout
       - run:
           name: Executar Trufflehog
           command: |
-            trufflehog github --repo https://github.com/Mreaggle/TesteDevSecOpsJunto > scan-results/trufflehog-report.txt
-      - store_artifacts:
-          path: scan-results/trufflehog-report.txt
+            trufflehog github --repo https://github.com/Mreaggle/TesteDevSecOpsJunto > scan-results/trufflehog-report.txt # Executa o Trufflehog e salva o relatório em um arquivo
+      - store_artifacts:                      # Armazena o relatório como artefato - disponibiliza os resultados da análise para posterior revisão
+          path: scan-results/trufflehog-report.txt # Define o caminho para o relatório
 
-  scan-git-gitleaks:
+  scan-git-gitleaks:                        # Job responsável por executar a análise de segurança do código-fonte com GitLeaks - procura por vazamentos de credenciais no código-fonte
     type: docker
     docker:
-      - image: zricethezav/gitleaks:latest
+      - image: zricethezav/gitleaks:latest # Imagem Docker do GitLeaks
     steps:
       - checkout
       - run:
           name: Executar GitLeaks
           command: |
-            gitleaks detect --source . > scan-results/gitleaks-report.txt
-      - store_artifacts:
-          path: scan-results/gitleaks-report.txt
+            gitleaks detect --source . > scan-results/gitleaks-report.txt # Executa o GitLeaks e salva o relatório em um arquivo
+      - store_artifacts:                      # Armazena o relatório como artefato - disponibiliza os resultados da análise para posterior revisão
+          path: scan-results/gitleaks-report.txt # Define o caminho para o relatório
 
   # --- Build & Deploy ---
-  build-and-push-image:
+  build-and-push-image:                     # Job responsável por construir e enviar a imagem Docker para o registro
     docker:
-      - image: cimg/base:stable
+      - image: cimg/base:stable              # Imagem Docker básica do CircleCI - leve e eficiente
     steps:
       - checkout
-      - build-and-push-image
+      - build-and-push-image                # Chama o comando personalizado - constrói e envia a imagem Docker
 
-  deploy:
+  deploy:                                     # Job responsável por realizar o deploy da aplicação
     docker:
-      - image: cimg/python:3.10
+      - image: cimg/python:3.10               # Imagem Docker com Python 3.10 - ambiente para executar o deploy
     steps:
       - aws-cli/setup:
-          profile-name: default
-      - aws-ecs/deploy-service-update:
-          auth:
+          profile-name: default                # Define o perfil da AWS a ser utilizado
+          role-arn: $ROLE_ARN                  # Assume a função IAM para o deploy - utiliza a variável de ambiente ROLE_ARN
+      - aws-ecs/deploy-service-update:        # Atualiza o serviço no AWS ECS - realiza o deploy da nova versão da aplicação
+          auth:                                # Configuração de autenticação (exemplo com OIDC) - permite autenticação segura com a AWS
             - aws-cli/setup:
                 profile: OIDC-USER
-                role_arn: $ROLE_ARN
-          cluster: $MY_APP_PREFIX-cluster
-          family: $MY_APP_PREFIX-service
-          task-definition: ./task-definition.json
-          container_image_name_updates: 'container=testdevsecopsjunto-container,tag=latest'
-          verify_revision_is_deployed: true
-          timeout: 300
+                role_arn: $ROLE_ARN          # Assume a função IAM para o deploy - utiliza a variável de ambiente ROLE_ARN
+          cluster: $MY_APP_PREFIX-cluster      # Define o nome do cluster ECS - usa variável de ambiente para o nome do cluster
+          family: $MY_APP_PREFIX-service      # Define o nome do serviço ECS - usa variável de ambiente para o nome do serviço
+          task-definition: ./task-definition.json # Define o arquivo de definição de tarefa - descreve como os containers devem ser executados
+          container_image_name_updates: 'container=testdevsecopsjunto-container,tag=latest' # Define a tag da imagem a ser utilizada - usa a tag 'latest' por padrão
+          verify_revision_is_deployed: true   # Verifica se a revisão foi implantada corretamente - garante que o deploy foi bem-sucedido
+          timeout: 300                        # Define o tempo limite para a atualização do serviço - previne execuções longas
 
 # Define o workflow do pipeline, que é uma sequência de jobs
 workflows:
-  build-and-deploy:
-    jobs:
-      - checkout:
-          context: TesteDevSecOps
-      - test:
-          context: TesteDevSecOps
-          requires:
+  build-and-deploy:                          # Nome do workflow - descreve o fluxo de trabalho do pipeline
+    jobs:                                     # Define os jobs que serão executados no workflow
+      - checkout:                             # Executa o job 'checkout' - obtém o código-fonte do repositório
+          context: TesteDevSecOps             # Define o contexto do CircleCI a ser utilizado - permite o uso de variáveis de ambiente e configurações específicas
+      - test:                                # Executa o job 'test' - executa os testes da aplicação
+          context: TesteDevSecOps             # Define o contexto do CircleCI a ser utilizado
+          requires:                             # Define que o job 'test' depende do job 'checkout' - garante que o código-fonte esteja disponível para os testes
             - checkout
-      - scan-app2-snyk:
-          context: TesteDevSecOps
-          requires:
+      - scan-app2-snyk:                        # Executa o job 'scan-app2-snyk' - realiza a análise de segurança do código-fonte do app2
+          context: TesteDevSecOps             # Define o contexto do CircleCI a ser utilizado
+          requires:                             # Define que o job 'scan-app2-snyk' depende do job 'checkout' - garante que o código-fonte esteja disponível para a análise
             - checkout
-      - scan-app1-snyk:
-          context: TesteDevSecOps
-          requires:
+      - scan-app1-snyk:                        # Executa o job 'scan-app1-snyk' - realiza a análise de segurança do código-fonte do app1
+          context: TesteDevSecOps             # Define o contexto do CircleCI a ser utilizado
+          requires:                             # Define que o job 'scan-app1-snyk' depende do job 'checkout' - garante que o código-fonte esteja disponível para a análise
             - checkout
-      - scan-app-sonarqube:
-          context: TesteDevSecOps
-          requires:
+      - scan-app-sonarqube:                  # Executa o job 'scan-app-sonarqube' - realiza a análise estática de código com SonarQube
+          context: TesteDevSecOps             # Define o contexto do CircleCI a ser utilizado
+          requires:                             # Define que o job 'scan-app-sonarqube' depende do job 'checkout' - garante que o código-fonte esteja disponível para a análise
             - checkout
-      - scan-docker-anchore:
-          context: TesteDevSecOps
-          requires:
+      - scan-docker-anchore:                  # Executa o job 'scan-docker-anchore' - realiza a análise de segurança da imagem Docker com Anchore Engine
+          context: TesteDevSecOps             # Define o contexto do CircleCI a ser utilizado
+          requires:                             # Define que o job 'scan-docker-anchore' depende do job 'checkout' - garante que a imagem Docker esteja disponível para a análise
             - checkout
-      - scan-docker-trivy:
-          context: TesteDevSecOps
-          requires:
+      - scan-docker-trivy:                   # Executa o job 'scan-docker-trivy' - realiza a análise de segurança da imagem Docker com Trivy
+          context: TesteDevSecOps             # Define o contexto do CircleCI a ser utilizado
+          requires:                             # Define que o job 'scan-docker-trivy' depende do job 'checkout' - garante que a imagem Docker esteja disponível para a análise
             - checkout
-      - scan-git-trufflehog:
-          context: TesteDevSecOps
-          requires:
+      - scan-git-trufflehog:                 # Executa o job 'scan-git-trufflehog' - realiza a análise de segurança do histórico do Git com Trufflehog
+          context: TesteDevSecOps             # Define o contexto do CircleCI a ser utilizado
+          requires:                             # Define que o job 'scan-git-trufflehog' depende do job 'checkout' - garante que o histórico do Git esteja disponível para a análise
             - checkout
-      - scan-git-gitleaks:
-          context: TesteDevSecOps
-          requires:
+      - scan-git-gitleaks:                   # Executa o job 'scan-git-gitleaks' - realiza a análise de segurança do código-fonte com GitLeaks
+          context: TesteDevSecOps             # Define o contexto do CircleCI a ser utilizado
+          requires:                             # Define que o job 'scan-git-gitleaks' depende do job 'checkout' - garante que o código-fonte esteja disponível para a análise
             - checkout
-      - build-and-push-image:
-          requires:
+      - build-and-push-image:                # Executa o job 'build-and-push-image' - constrói e envia a imagem Docker para o registro
+          requires:                             # Define que o job 'build-and-push-image' depende dos jobs de teste e segurança - garante que a aplicação seja testada e verificada antes do deploy
             - test
             - scan-app2-snyk
             - scan-app1-snyk
@@ -218,6 +217,6 @@ workflows:
             - scan-docker-trivy
             - scan-git-trufflehog
             - scan-git-gitleaks
-      - deploy:
-          requires:
+      - deploy:                                # Executa o job 'deploy' - realiza o deploy da aplicação no AWS ECS
+          requires:                             # Define que o job 'deploy' depende do job 'build-and-push-image' - garante que a imagem Docker esteja disponível para o deploy
             - build-and-push-image
