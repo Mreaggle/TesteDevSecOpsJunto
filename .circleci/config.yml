@@ -64,7 +64,7 @@ jobs:
       - store_artifacts:                      # Armazena o relatório como artefato - disponibiliza os resultados da análise para posterior revisão
           path: scan-results/trufflehog-report.txt # Define o caminho para o relatório
 
-  scan-git-gitleaks:                        # Job responsável por executar a análise de segurança do código-fonte com GitLeaks - procura por vazamentos de credenciais no código-fonte
+    scan-git-gitleaks:                        # Job responsável por executar a análise de segurança do código-fonte com GitLeaks - procura por vazamentos de credenciais no código-fonte
     docker:
       - image: zricethezav/gitleaks:latest # Imagem Docker do GitLeaks
     steps:
@@ -75,7 +75,7 @@ jobs:
       - run:
           name: Executar GitLeaks
           command: |
-            gitleaks detect --source . --report scan-results/gitleaks-report.json # Salva a saída em um arquivo JSON
+            gitleaks detect --source . -r scan-results/gitleaks-report.json # Salva a saída em um arquivo JSON
           when: always                      # Executa o passo mesmo se houver erros - permite continuar o pipeline
       - store_artifacts:                      # Armazena o relatório como artefato - disponibiliza os resultados da análise para posterior revisão
           path: scan-results/gitleaks-report.json # Define o caminho para o relatório
