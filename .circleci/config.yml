@@ -115,8 +115,9 @@ jobs:
       - run:
           name: Acessar diretório app1
           command: cd app1                   # Navega até o diretório do projeto app1
-      - sonarcloud/scan:                       # Executa a análise com SonarCloud - verifica a qualidade do código e identifica problemas de segurança
-          sonar_token_variable_name: SONAR_TOKEN # Define o nome da variável de ambiente que contém o token do SonarCloud                       # Habilita o modo de depuração do SonarScanner
+      - sonarcloud/scan:                      # Executa a análise com SonarCloud - verifica a qualidade do código e identifica problemas de segurança
+          sonar_token_variable_name: SONAR_TOKEN # Define o nome da variável de ambiente que contém o token do SonarCloud
+          command: sonar-scanner -Dsonar.projectKey=$SONAR_PROJECT_KEY -Dsonar.organization=myOrganization
 
   scan-docker-anchore:                       # Job responsável por executar a análise de segurança da imagem Docker com Anchore Engine
     executor: anchore-engine/anchore_engine         # Define o executor como Anchore Engine - ambiente especializado para análise de imagens
