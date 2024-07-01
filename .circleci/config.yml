@@ -96,7 +96,7 @@ jobs:
           name: build container
       - anchore-engine/analyze_local_image:
           dockerfile-path: ./app1/Dockerfile
-          image-name: testdevsecopsjunto:latest
+          image_name: $DOCKERHUB_USER/testdevsecopsjunto:latest
           policy_bundle_file_path: .circleci/.anchore/policy_bundle.json
           policy-failure: true
           timeout: '500'
