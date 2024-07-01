@@ -99,7 +99,6 @@ jobs:
       - anchore-engine/parse_reports                 # Analisa os relatórios gerados pelo Anchore Engine - extrai informações relevantes
       - store_artifacts:                      # Armazena os relatórios como artefatos - disponibiliza os resultados da análise para posterior revisão
           path: anchore-reports               # Define o caminho para os relatórios               # Define o caminho para os relatórios
-          path: anchore-reports               # Define o caminho para os relatórios               # Define o caminho para os relatórios
 
   scan-docker-trivy:                        # Job responsável por executar a análise de segurança da imagem Docker com Trivy
     type: docker
