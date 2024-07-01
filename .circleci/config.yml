@@ -107,9 +107,9 @@ jobs:
           severity-threshold: high            # Define o limite de severidade para reportar vulnerabilidades
           monitor-on-build: true             # Habilita o monitoramento contínuo do projeto no Snyk
 
-  scan-app-sonarqube:                       # Job responsável por executar a análise estática com SonarQube
+    scan-app-sonarqube:                       # Job responsável por executar a análise estática com SonarQube
     docker:                                 
-      - image: cimg/node:18.12.0             # Imagem Docker com a versão mais recente do Node.js
+      - image: cimg/node:18.12.0             # Imagem Docker com a versão específica do Node.js
     steps:
       - checkout
       - run:
@@ -117,6 +117,7 @@ jobs:
           command: cd app1                   # Navega até o diretório do projeto app1
       - sonarcloud/scan:                       # Executa a análise com SonarCloud - verifica a qualidade do código e identifica problemas de segurança
           sonar_token_variable_name: SONAR_TOKEN # Define o nome da variável de ambiente que contém o token do SonarCloud
+          command: -X                         # Habilita o modo de depuração do SonarScanner
 
   scan-docker-anchore:                       # Job responsável por executar a análise de segurança da imagem Docker com Anchore Engine
     executor: anchore-engine/anchore_engine         # Define o executor como Anchore Engine - ambiente especializado para análise de imagens
