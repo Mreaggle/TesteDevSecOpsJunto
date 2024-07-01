@@ -154,9 +154,6 @@ jobs:
     docker:
       - image: cimg/python:3.10               # Imagem Docker com Python 3.10 - ambiente para executar o deploy
     steps:
-      - aws-cli/setup:
-          profile-name: default                # Define o perfil da AWS a ser utilizado
-          role-arn: $ROLE_ARN                  # Assume a função IAM para o deploy - utiliza a variável de ambiente ROLE_ARN
       - aws-ecs/deploy-service-update:        # Atualiza o serviço no AWS ECS - realiza o deploy da nova versão da aplicação
           auth:                                # Configuração de autenticação (exemplo com OIDC) - permite autenticação segura com a AWS
             - aws-cli/setup:
