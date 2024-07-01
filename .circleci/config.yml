@@ -47,7 +47,9 @@ jobs:
             cd app1                           # Acessa o diretório da aplicação
             npm install                      # Instala as dependências
             npm test                         # Executa os testes
-            sudo apt-get update && sudo apt-get install -y git #Atualiza Git
+      - run:
+          name: Atualizar Git
+          command: sudo apt-get update && sudo apt-get install -y git #Atualiza Git      
   # --- Scans GIT ---
   scan-git-trufflehog:                      # Job responsável por executar a análise de segurança do código-fonte com Trufflehog - procura por segredos no histórico do Git
     docker:
