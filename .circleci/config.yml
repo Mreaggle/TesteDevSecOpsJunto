@@ -80,12 +80,27 @@ jobs:
           path: scan-results/gitleaks-report.txt # Define o caminho para o relatório
 
   # --- Scans APPSEC ---
-  scan-app-snyk:                             # Job responsável por executar a análise SAST com Snyk
+  scan-app1-snyk:                          # Job responsável por executar a análise SAST com Snyk em app1
+    docker:                                 
+      - image: cimg/node:lts                  # Imagem Docker com Node.js LTS - ambiente estável para a análise
+    steps:
+      - checkout
+      - run:
+          name: Acessar diretório app1
+          command: cd app1                   # Navega até o diretório do projeto app1
+      - run:
+          name: Executar Snyk Scan
+          command: snyk/scan                  # Executa a análise SAST com Snyk - identifica vulnerabilidades no código-fonte
+
+  scan-app2-snyk:                             # Job responsável por executar a análise SAST com Snyk em app2
     docker:                                 
       - image: cimg/node:lts                  # Imagem Docker com Node.js LTS - ambiente estável para a análise
     steps:
       - checkout
       - run: npm ci                           # Instala as dependências do projeto
+      - run:
+          name: Acessar diretório app2
+          command: cd app2                   # Navega até o diretório do projeto app2
       - snyk/scan:                            # Executa a análise SAST com Snyk - identifica vulnerabilidades no código-fonte
           severity-threshold: high            # Define o limite de severidade para reportar vulnerabilidades
           monitor-on-build: true             # Habilita o monitoramento contínuo do projeto no Snyk
@@ -95,8 +110,10 @@ jobs:
       - image: cimg/node:latest               # Imagem Docker com a versão mais recente do Node.js
     steps:
       - checkout
+      - run:
+          name: Acessar diretório app1
+          command: cd app1                   # Navega até o diretório do projeto app1
       - sonarcloud/scan:                       # Executa a análise com SonarCloud - verifica a qualidade do código e identifica problemas de segurança
-          project_root: app1                  # Define o diretório da aplicação a ser analisada (app1)
           sonar_token_variable_name: SONAR_TOKEN # Define o nome da variável de ambiente que contém o token do SonarCloud
 
   scan-docker-anchore:                       # Job responsável por executar a análise de segurança da imagem Docker com Anchore Engine
@@ -120,6 +137,9 @@ jobs:
     steps:
       - checkout
       - setup_remote_docker
+      - run:
+          name: Criar diretório scan-results
+          command: mkdir -p scan-results
       - run:
           name: Executar Trivy
           command: |
@@ -169,34 +189,56 @@ workflows:
             - checkout
       - scan-git-trufflehog:                 # Executa o job 'scan-git-trufflehog' - realiza a análise de segurança do histórico do Git com Trufflehog
           context: TesteDevSecOps             # Define o contexto do CircleCI a ser utilizado
-          requires:                             # Define que o job 'scan-git-trufflehog' depende do job 'checkout' - garante que o histórico do Git esteja disponível para a análise
+          requires:                             # Define que o job 'scan-git-trufflehog' depende do job 'checkout' e 'test'- garante que o histórico do Git esteja disponível para a análise
             - checkout
+            - test
       - scan-git-gitleaks:                   # Executa o job 'scan-git-gitleaks' - realiza a análise de segurança do código-fonte com GitLeaks
           context: TesteDevSecOps             # Define o contexto do CircleCI a ser utilizado
-          requires:                             # Define que o job 'scan-git-gitleaks' depende do job 'checkout' - garante que o código-fonte esteja disponível para a análise
+          requires:                             # Define que o job 'scan-git-gitleaks' depende do job 'checkout' e 'test' - garante que o código-fonte esteja disponível para a análise
             - checkout
-      - scan-app-snyk:                        # Executa o job 'scan-app-snyk' - realiza a análise de segurança do código-fonte
+            - test
+      - scan-app1-snyk:                        # Executa o job 'scan-app1-snyk' - realiza a análise de segurança do código-fonte do app1
           context: TesteDevSecOps             # Define o contexto do CircleCI a ser utilizado
-          requires:                             # Define que o job 'scan-app-snyk' depende do job 'checkout' - garante que o código-fonte esteja disponível para a análise
+          requires:                             # Define que o job 'scan-app1-snyk' depende do job 'checkout', 'test', 'scan-git-trufflehog' e 'scan-git-gitleaks' - garante que o código-fonte esteja disponível para a análise
             - checkout
+            - test
+            - scan-git-trufflehog
+            - scan-git-gitleaks
+      - scan-app2-snyk:                        # Executa o job 'scan-app2-snyk' - realiza a análise de segurança do código-fonte do app2
+          context: TesteDevSecOps             # Define o contexto do CircleCI a ser utilizado
+          requires:                             # Define que o job 'scan-app2-snyk' depende do job 'checkout', 'test', 'scan-git-trufflehog' e 'scan-git-gitleaks' - garante que o código-fonte esteja disponível para a análise
+            - checkout
+            - test
+            - scan-git-trufflehog
+            - scan-git-gitleaks
       - scan-app-sonarqube:                  # Executa o job 'scan-app-sonarqube' - realiza a análise estática de código com SonarQube
           context: TesteDevSecOps             # Define o contexto do CircleCI a ser utilizado
-          requires:                             # Define que o job 'scan-app-sonarqube' depende do job 'checkout' - garante que o código-fonte esteja disponível para a análise
+          requires:                             # Define que o job 'scan-app-sonarqube' depende do job 'checkout', 'test', 'scan-git-trufflehog' e 'scan-git-gitleaks' - garante que o código-fonte esteja disponível para a análise
             - checkout
+            - test
+            - scan-git-trufflehog
+            - scan-git-gitleaks
       - scan-docker-anchore:                  # Executa o job 'scan-docker-anchore' - realiza a análise de segurança da imagem Docker com Anchore Engine
           context: TesteDevSecOps             # Define o contexto do CircleCI a ser utilizado
-          requires:                             # Define que o job 'scan-docker-anchore' depende do job 'checkout' - garante que a imagem Docker esteja disponível para a análise
+          requires:                             # Define que o job 'scan-docker-anchore' depende do job 'checkout', 'test', 'scan-git-trufflehog' e 'scan-git-gitleaks' - garante que a imagem Docker esteja disponível para a análise
             - checkout
+            - test
+            - scan-git-trufflehog
+            - scan-git-gitleaks
       - scan-docker-trivy:                   # Executa o job 'scan-docker-trivy' - realiza a análise de segurança da imagem Docker com Trivy
           context: TesteDevSecOps             # Define o contexto do CircleCI a ser utilizado
-          requires:                             # Define que o job 'scan-docker-trivy' depende do job 'checkout' - garante que a imagem Docker esteja disponível para a análise
+          requires:                             # Define que o job 'scan-docker-trivy' depende do job 'checkout', 'test', 'scan-git-trufflehog' e 'scan-git-gitleaks' - garante que a imagem Docker esteja disponível para a análise
             - checkout
+            - test
+            - scan-git-trufflehog
+            - scan-git-gitleaks
       - build-and-push-image:                # Executa o job 'build-and-push-image' - constrói e envia a imagem Docker para o registro
           requires:                             # Define que o job 'build-and-push-image' depende dos jobs de teste e segurança - garante que a aplicação seja testada e verificada antes do deploy
             - test
             - scan-git-trufflehog
             - scan-git-gitleaks
-            - scan-app-snyk
+            - scan-app1-snyk
+            - scan-app2-snyk
             - scan-app-sonarqube
             - scan-docker-anchore
             - scan-docker-trivy
