@@ -85,20 +85,21 @@ jobs:
       - sonarcloud/scan:                       # Executa a análise com SonarCloud - verifica a qualidade do código e identifica problemas de segurança
           projectKey: $SONAR_ORGANIZATION_testedevsecops_TesteDevSecOpsJunto # Define a chave do projeto no SonarCloud (Environment Variable)
 
-  scan-docker-anchore:                       # Job responsável por executar a análise de segurança da imagem Docker com Anchore Engine
-    executor: anchore/anchore_engine         # Define o executor como Anchore Engine - ambiente especializado para análise de imagens
+    scan-docker-anchore:                       # Job responsável por executar a análise de segurança da imagem Docker com Anchore Engine
+    executor: anchore-engine/anchore_engine         # Define o executor como Anchore Engine - ambiente especializado para análise de imagens
     steps:
       - setup_remote_docker                   # Configura o Docker para ser utilizado no job
       - checkout
       - run:
           command: docker build -t "testdevsecopsjunto:latest" . # Constrói a imagem Docker - cria a imagem para análise
           name: build container
-      - anchore/analyze_local_image:          # Analisa a imagem Docker localmente com Anchore Engine - identifica vulnerabilidades e verifica conformidade com políticas
+      - anchore-engine/analyze_local_image:          # Analisa a imagem Docker localmente com Anchore Engine - identifica vulnerabilidades e verifica conformidade com políticas
           image_name: $DOCKERHUB_USER/testdevsecopsjunto:latest # Define o nome da imagem a ser analisada
           timeout: '500'                     # Define o tempo limite para a análise - previne execuções longas
-      - anchore/parse_reports                 # Analisa os relatórios gerados pelo Anchore Engine - extrai informações relevantes
+      - anchore-engine/parse_reports                 # Analisa os relatórios gerados pelo Anchore Engine - extrai informações relevantes
       - store_artifacts:                      # Armazena os relatórios como artefatos - disponibiliza os resultados da análise para posterior revisão
-          path: anchore-reports               # Define o caminho para os relatórios
+          path: anchore-reports               # Define o caminho para os relatórios               # Define o caminho para os relatórios
+          path: anchore-reports               # Define o caminho para os relatórios               # Define o caminho para os relatórios
 
   scan-docker-trivy:                        # Job responsável por executar a análise de segurança da imagem Docker com Trivy
     type: docker
