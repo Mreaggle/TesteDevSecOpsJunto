@@ -100,8 +100,9 @@ jobs:
       - checkout
       - run:
           name: Acessar diretório app2
-          command: cd app2                   # Navega até o diretório do projeto app2
-      - run: npm install
+          command: |
+          cd app2                   # Navega até o diretório do projeto app2
+          npm install               #Instala o npm dentro do diretório
       - snyk/scan:                            # Executa a análise SAST com Snyk - identifica vulnerabilidades no código-fonte
           severity-threshold: high            # Define o limite de severidade para reportar vulnerabilidades
           monitor-on-build: true             # Habilita o monitoramento contínuo do projeto no Snyk
