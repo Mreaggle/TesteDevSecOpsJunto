@@ -51,7 +51,7 @@ jobs:
   # --- AppSec ---
   scan-app2-snyk:                             # Job responsável por executar a análise SAST com Snyk em app2
     docker:                                 
-      - image: cimg/node:lts                  # Imagem Docker com Node.js LTS - ambiente estável para a análise
+      - image: cimg/node:lts
     steps:
       - checkout
       - run: npm ci                           # Instala as dependências do projeto
@@ -59,6 +59,9 @@ jobs:
           name: Acessar diretório app2
           command: cd app2                   # Navega até o diretório do projeto app2
       - snyk/scan:                            # Executa a análise SAST com Snyk - identifica vulnerabilidades no código-fonte
+          # Exemplo de parâmetros:
+          severity-threshold: high
+          monitor-on-build: true
 
   scan-app1-snyk:                          # Job responsável por executar a análise SAST com Snyk em app1
     docker:                                 
@@ -71,7 +74,10 @@ jobs:
           command: cd app1                   # Navega até o diretório do projeto app1
       - run:
           name: Executar Snyk Scan
-          command: snyk/scan                  # Executa a análise SAST com Snyk - identifica vulnerabilidades no código-fonte
+          command: snyk/scan:                            # Executa a análise SAST com Snyk - identifica vulnerabilidades no código-fonte
+          # Exemplo de parâmetros:
+          severity-threshold: high
+          monitor-on-build: true
 
   scan-app-sonarqube:                       # Job responsável por executar a análise estática com SonarQube
     docker:                                 
