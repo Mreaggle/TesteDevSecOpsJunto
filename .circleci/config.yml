@@ -111,11 +111,14 @@ jobs:
       - run:
           name: Acessar diretório app1
           command: cd app1                   # Navega até o diretório do projeto app1
+      - run:
+          name: Configurar variáveis de ambiente do SonarCloud
+          command: |
+            echo 'export SONAR_PROJECT_KEY=$SONAR_PROJECT_KEY' >> $BASH_ENV
+            echo 'export SONAR_ORGANIZATION=$SONAR_ORGANIZATION' >> $BASH_ENV
       - sonarcloud/scan:                      # Executa a análise com SonarCloud - verifica a qualidade do código e identifica problemas de segurança
           project_root: app1
           sonar_token_variable_name: SONAR_TOKEN # Define o nome da variável de ambiente que contém o token do SonarCloud
-          sonar.projectKey: $SONAR_PROJECT_KEY # Define a chave do projeto explicitamente
-          sonar.organization: $SONAR_ORGANIZATION # Define a organização explicitamente
 
   scan-docker-anchore:                       # Job responsável por executar a análise de segurança da imagem Docker com Anchore Engine
     executor: anchore-engine/anchore_engine         # Define o executor como Anchore Engine - ambiente especializado para análise de imagens
