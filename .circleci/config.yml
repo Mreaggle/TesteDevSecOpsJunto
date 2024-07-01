@@ -39,9 +39,8 @@ jobs:
     steps:
       - checkout
       - node/install:                         # Instala as dependências do projeto Node.js - garante que as dependências estejam presentes
-          install-yarn: true
+          install-yarn: false
           node-version: '18.12.0'
-          cache-version: 2
       - run:
           name: Run tests                      # 2.2 - Test -> Teste com output "Fake test" ou o teste da sua aplicação: Executa os testes
           command: |                          # Define o comando a ser executado
