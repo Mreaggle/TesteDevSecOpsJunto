@@ -64,7 +64,7 @@ jobs:
       - store_artifacts:                      # Armazena o relatório como artefato - disponibiliza os resultados da análise para posterior revisão
           path: scan-results/trufflehog-report.txt # Define o caminho para o relatório
 
-    scan-git-gitleaks:                        # Job responsável por executar a análise de segurança do código-fonte com GitLeaks - procura por vazamentos de credenciais no código-fonte
+  scan-git-gitleaks:                        # Job responsável por executar a análise de segurança do código-fonte com GitLeaks - procura por vazamentos de credenciais no código-fonte
     docker:
       - image: zricethezav/gitleaks:latest # Imagem Docker do GitLeaks
     steps:
