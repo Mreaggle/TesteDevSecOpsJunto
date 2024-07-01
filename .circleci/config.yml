@@ -110,10 +110,9 @@ jobs:
       - checkout
       - run:
           name: Acessar diretório app1
-          command: |
-            cd app1                   # Navega até o diretório do projeto app1
-            sonar-scanner -Dsonar.projectKey=$SONAR_PROJECT_KEY -Dsonar.organization=$SONAR_ORGANIZATION -X
+          command: cd app1                   # Navega até o diretório do projeto app1
       - sonarcloud/scan:                      # Executa a análise com SonarCloud - verifica a qualidade do código e identifica problemas de segurança
+          project_root: app1
           sonar_token_variable_name: SONAR_TOKEN # Define o nome da variável de ambiente que contém o token do SonarCloud
 
   scan-docker-anchore:                       # Job responsável por executar a análise de segurança da imagem Docker com Anchore Engine
@@ -145,7 +144,7 @@ jobs:
           command: |
             #!/bin/bash -eo pipefail
             docker pull aquasec/trivy:latest # Faz o pull da imagem do Trivy - garante que a versão mais recente seja utilizada
-            docker run --rm aquasec/trivy:latest image $DOCKERHUB_USER/testdevsecopsjunto:latest > scan-results/trivy-report.txt # Executa a análise com Trivy e salva o relatório em um arquivo - usa variável de ambiente para o nome da imagem
+            docker run --rm aquasec/trivy:latest image $DOCKERHUB_USER/app1:latest > scan-results/trivy-report.txt # Executa a análise com Trivy e salva o relatório em um arquivo - usa variável de ambiente para o nome da imagem
       - store_artifacts:                      # Armazena o relatório como artefato - disponibiliza os resultados da análise para posterior revisão
           path: scan-results/trivy-report.txt # Define o caminho para o relatório
 
