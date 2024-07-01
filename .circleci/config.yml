@@ -164,7 +164,7 @@ jobs:
           task-definition: ./task-definition.json # Define o arquivo de definição de tarefa - descreve como os containers devem ser executados
           container_image_name_updates: 'container=testdevsecopsjunto-container,tag=latest' # Define a tag da imagem a ser utilizada - usa a tag 'latest' por padrão
           verify_revision_is_deployed: true   # Verifica se a revisão foi implantada corretamente - garante que o deploy foi bem-sucedido
-          timeout: 300                        # Define o tempo limite para a atualização do serviço - previne execuções longas
+          timeout: 300                        # Define o tempo limite para a atualização do serviço - previne execuções longas                        # Define o tempo limite para a atualização do serviço - previne execuções longas
 
 # Define o workflow do pipeline, que é uma sequência de jobs
 workflows:
