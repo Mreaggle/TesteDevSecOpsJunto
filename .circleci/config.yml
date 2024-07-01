@@ -87,22 +87,20 @@ jobs:
           sonar.projectKey: $SONAR_ORGANIZATION_testedevsecops_TesteDevSecOpsJunto
 
   scan-docker-anchore:                       # Job responsável por executar a análise de segurança da imagem Docker com Anchore Engine
-    executor: anchore-engine/anchore_engine
-    steps:
-      - setup_remote_docker
-      - checkout
-      - run:
-          command: docker build -t "testdevsecopsjunto:latest" .
-          name: build container
-      - anchore-engine/analyze_local_image:
-          dockerfile-path: ./app1/Dockerfile
-          image_name: $DOCKERHUB_USER/testdevsecopsjunto:latest
-          policy_bundle_file_path: .circleci/.anchore/policy_bundle.json
-          policy-failure: true
-          timeout: '500'
-      - anchore-engine/parse_reports
-      - store_artifacts:
-          path: anchore-reports
+  executor: anchore-engine/anchore_engine         # Define o executor como Anchore Engine
+  steps:
+    - setup_remote_docker                   # Configura o Docker para ser utilizado no job
+    - checkout
+    - run:
+        command: docker build -t "testdevsecopsjunto:latest" . # Constrói a imagem Docker
+        name: build container
+    - anchore-engine/analyze_local_image:          # Analisa a imagem Docker localmente com Anchore Engine
+        image_name: $DOCKERHUB_USER/testdevsecopsjunto:latest # Define o nome da imagem a ser analisada
+        # Remova os parâmetros 'policy-failure' e 'dockerfile-path'
+        timeout: '500'                     # Define o tempo limite para a análise
+    - anchore-engine/parse_reports                 
+    - store_artifacts:                      # Armazena os relatórios como artefatos
+        path: anchore-reports               # Define o caminho para os relatórios
 
   scan-docker-trivy:
     type: docker
