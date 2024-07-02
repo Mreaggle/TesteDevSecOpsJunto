@@ -125,13 +125,11 @@ jobs:
       - setup_remote_docker: {}
       - run:
           name: Criar diretório de artefatos
-          command: mkdir -p scan-results
-      - run:
-          name: Entra no App1
-          command: cd app1    
+          command: mkdir -p scan-results  
       - run:
           name: Build da imagem
           command: |
+            cd app1
             ls -la #Lista diretório atual
             if [ -d "app1" ]; then
               cd app1 && docker build -t ${DOCKERHUB_USER}/app1:latest .
