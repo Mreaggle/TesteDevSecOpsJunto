@@ -194,66 +194,66 @@ workflows:
     jobs:                                     # Define os jobs que serão executados no workflow
       - checkout:                             # Executa o job 'checkout' - obtém o código-fonte do repositório
           context: TesteDevSecOps             # Define o contexto do CircleCI a ser utilizado - permite o uso de variáveis de ambiente e configurações específicas
-    #  - test:                                # Executa o job 'test' - executa os testes da aplicação
-    #      context: TesteDevSecOps             # Define o contexto do CircleCI a ser utilizado
-    #      requires:                             # Define que o job 'test' depende do job 'checkout' - garante que o código-fonte esteja disponível para os testes
-    #        - checkout
-    #  - scan-git-trufflehog:                 # Executa o job 'scan-git-trufflehog' - realiza a análise de segurança do histórico do Git com Trufflehog
-    #      context: TesteDevSecOps             # Define o contexto do CircleCI a ser utilizado
-    #      requires:                             # Define que o job 'scan-git-trufflehog' depende do job 'checkout' e 'test'- garante que o histórico do Git esteja disponível para a análise
-    #        - checkout
-    #        - test
-    #  - scan-git-gitleaks:                   # Executa o job 'scan-git-gitleaks' - realiza a análise de segurança do código-fonte com GitLeaks
-    #      context: TesteDevSecOps             # Define o contexto do CircleCI a ser utilizado
-    #      requires:                             # Define que o job 'scan-git-gitleaks' depende do job 'checkout' e 'test' - garante que o código-fonte esteja disponível para a análise
-    #        - checkout
-    #        - test
-    #  - scan-app1-snyk:                        # Executa o job 'scan-app1-snyk' - realiza a análise de segurança do código-fonte do app1
-    #      context: TesteDevSecOps             # Define o contexto do CircleCI a ser utilizado
-    #      requires:                             # Define que o job 'scan-app1-snyk' depende do job 'checkout', 'test', 'scan-git-trufflehog' e 'scan-git-gitleaks' - garante que o código-fonte esteja disponível para a análise
-    #        - checkout
-    #        - test
-    #        - scan-git-trufflehog
-    #        - scan-git-gitleaks
-    #  - scan-app2-snyk:                        # Executa o job 'scan-app2-snyk' - realiza a análise de segurança do código-fonte do app2
-    #      context: TesteDevSecOps             # Define o contexto do CircleCI a ser utilizado
-    #      requires:                             # Define que o job 'scan-app2-snyk' depende do job 'checkout', 'test', 'scan-git-trufflehog' e 'scan-git-gitleaks' - garante que o código-fonte esteja disponível para a análise
-    #        - checkout
-    #        - test
-    #        - scan-git-trufflehog
-    #        - scan-git-gitleaks
+       - test:                                # Executa o job 'test' - executa os testes da aplicação
+           context: TesteDevSecOps             # Define o contexto do CircleCI a ser utilizado
+           requires:                             # Define que o job 'test' depende do job 'checkout' - garante que o código-fonte esteja disponível para os testes
+             - checkout
+       - scan-git-trufflehog:                 # Executa o job 'scan-git-trufflehog' - realiza a análise de segurança do histórico do Git com Trufflehog
+           context: TesteDevSecOps             # Define o contexto do CircleCI a ser utilizado
+           requires:                             # Define que o job 'scan-git-trufflehog' depende do job 'checkout' e 'test'- garante que o histórico do Git esteja disponível para a análise
+             - checkout
+             - test
+       - scan-git-gitleaks:                   # Executa o job 'scan-git-gitleaks' - realiza a análise de segurança do código-fonte com GitLeaks
+           context: TesteDevSecOps             # Define o contexto do CircleCI a ser utilizado
+           requires:                             # Define que o job 'scan-git-gitleaks' depende do job 'checkout' e 'test' - garante que o código-fonte esteja disponível para a análise
+             - checkout
+             - test
+       - scan-app1-snyk:                        # Executa o job 'scan-app1-snyk' - realiza a análise de segurança do código-fonte do app1
+           context: TesteDevSecOps             # Define o contexto do CircleCI a ser utilizado
+           requires:                             # Define que o job 'scan-app1-snyk' depende do job 'checkout', 'test', 'scan-git-trufflehog' e 'scan-git-gitleaks' - garante que o código-fonte esteja disponível para a análise
+             - checkout
+             - test
+             - scan-git-trufflehog
+             - scan-git-gitleaks
+       - scan-app2-snyk:                        # Executa o job 'scan-app2-snyk' - realiza a análise de segurança do código-fonte do app2
+           context: TesteDevSecOps             # Define o contexto do CircleCI a ser utilizado
+           requires:                             # Define que o job 'scan-app2-snyk' depende do job 'checkout', 'test', 'scan-git-trufflehog' e 'scan-git-gitleaks' - garante que o código-fonte esteja disponível para a análise
+             - checkout
+             - test
+             - scan-git-trufflehog
+             - scan-git-gitleaks
       - scan-app-sonarqube:                  # Executa o job 'scan-app-sonarqube' - realiza a análise estática de código com SonarQube
           context: TesteDevSecOps
           requires:                             # Define que o job 'scan-app-sonarqube' depende do job 'checkout', 'test', 'scan-git-trufflehog' e 'scan-git-gitleaks' - garante que o código-fonte esteja disponível para a análise
             - checkout
-    #        - test
-    #        - scan-git-trufflehog
-    #        - scan-git-gitleaks
-    #  - scan-docker-anchore:                  # Executa o job 'scan-docker-anchore' - realiza a análise de segurança da imagem Docker com Anchore Engine
-    #      context: TesteDevSecOps             # Define o contexto do CircleCI a ser utilizado
-    #      requires:                             # Define que o job 'scan-docker-anchore' depende do job 'checkout', 'test', 'scan-git-trufflehog' e 'scan-git-gitleaks' - garante que a imagem Docker esteja disponível para a análise
-    #        - checkout
-    #        - test
-    #        - scan-git-trufflehog
-    #        - scan-git-gitleaks
+             - test
+             - scan-git-trufflehog
+             - scan-git-gitleaks
+       - scan-docker-anchore:                  # Executa o job 'scan-docker-anchore' - realiza a análise de segurança da imagem Docker com Anchore Engine
+           context: TesteDevSecOps             # Define o contexto do CircleCI a ser utilizado
+           requires:                             # Define que o job 'scan-docker-anchore' depende do job 'checkout', 'test', 'scan-git-trufflehog' e 'scan-git-gitleaks' - garante que a imagem Docker esteja disponível para a análise
+             - checkout
+             - test
+             - scan-git-trufflehog
+             - scan-git-gitleaks
       - scan-docker-trivy:                   # Executa o job 'scan-docker-trivy' - realiza a análise de segurança da imagem Docker com Trivy
           #context: TesteDevSecOps             # Define o contexto do CircleCI a ser utilizado
           requires:                             # Define que o job 'scan-docker-trivy' depende do job 'checkout', 'test', 'scan-git-trufflehog' e 'scan-git-gitleaks' - garante que a imagem Docker esteja disponível para a análise
             - checkout
-      #      - test
-      #      - scan-git-trufflehog
-      #      - scan-git-gitleaks
-      #- build-and-push-image:                # Executa o job 'build-and-push-image' - constrói e envia a imagem Docker para o registro
-      #    requires:                             # Define que o job 'build-and-push-image' depende dos jobs de teste e segurança - garante que a aplicação seja testada e verificada antes do deploy
-      #      - test
-      #      - scan-git-trufflehog
-      #      - scan-git-gitleaks
-      #      - scan-app1-snyk
-      #      - scan-app2-snyk
-      #      - scan-app-sonarqube
-      #      - scan-docker-anchore
-      #      - scan-docker-trivy
-      #- deploy:                                # Executa o job 'deploy' - realiza o deploy da aplicação no AWS ECS
-      #    context: TesteDevSecOps
-      #    requires:                             # Define que o job 'deploy' depende do job 'build-and-push-image' - garante que a imagem Docker esteja disponível para o deploy
-      #      - build-and-push-image
+             - test
+             - scan-git-trufflehog
+             - scan-git-gitleaks
+       - build-and-push-image:                # Executa o job 'build-and-push-image' - constrói e envia a imagem Docker para o registro
+           requires:                             # Define que o job 'build-and-push-image' depende dos jobs de teste e segurança - garante que a aplicação seja testada e verificada antes do deploy
+             - test
+             - scan-git-trufflehog
+             - scan-git-gitleaks
+             - scan-app1-snyk
+             - scan-app2-snyk
+             - scan-app-sonarqube
+             - scan-docker-anchore
+             - scan-docker-trivy
+       - deploy:                                # Executa o job 'deploy' - realiza o deploy da aplicação no AWS ECS
+           context: TesteDevSecOps
+           requires:                             # Define que o job 'deploy' depende do job 'build-and-push-image' - garante que a imagem Docker esteja disponível para o deploy
+             - build-and-push-image
