@@ -117,23 +117,27 @@ jobs:
       - sonarcloud/scan:                     # Executa a análise com SonarCloud             
           project_root: app1                    
 
-  scan-docker-trivy:                        
+  scan-docker-trivy:                        # Job responsável por executar a análise de segurança da imagem Docker com Trivy
     docker:
-      - image: aquasec/trivy:latest          
+      - image: cimg/node:18.12.0          # Imagem com Trivy
     steps:
       - checkout
       - setup_remote_docker: {}
       - run:
-          name: Build e Push da imagem
+          name: Criar diretório de artefatos
+          command: mkdir -p scan-results  
+      - run:
+          name: Build da imagem
           command: |
-            docker build -t ${DOCKERHUB_USER}/app1:latest .
-            echo $DOCKERHUB_PASSWORD | docker login -u $DOCKERHUB_USER --password-stdin
-            docker push ${DOCKERHUB_USER}/app1:latest
+            cd app1
+            ls -la #Lista diretório atual
+            docker build -t mreaggle/app1:latest .
+           
       - run:
           name: Executar Trivy
           command: |
-            trivy image ${DOCKERHUB_USER}/app1:latest > scan-results/trivy-report.txt
-      - store_artifacts:                      
+            docker run --rm aquasec/trivy:latest image mreaggle/app1:latest > scan-results/trivy-report.txt
+      - store_artifacts:                      # Armazena o relatório como artefato
           path: scan-results/trivy-report.txt
 
   scan-docker-anchore:                       # Job responsável por executar a análise de segurança da imagem Docker com Anchore Engine
