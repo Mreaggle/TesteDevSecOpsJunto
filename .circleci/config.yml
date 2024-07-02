@@ -202,35 +202,47 @@ jobs:
   
 
   # --- Rodar BurpSuite ---
-  BurpScan-http-headers: #Checa o Ambiente com BurpSuite Community Edition
-    docker:
-      - image: cimg/python:3.10 # Imagem com Python para executar o Burp Suite
-    steps:
-      - checkout
-      - aws-cli/setup:
-          profile-name: default
-      - run:
-          name: Obter IP da aplicação
-          command: |
-            IP_PUBLICO=$(aws ecs describe-services --cluster $MY_APP_PREFIX-cluster --services $MY_APP_PREFIX-service --query 'services[0].deployments[0].networkConfiguration.awsvpcConfiguration.subnets[0]' --output text)
-            echo "export IP_PUBLICO=$IP_PUBLICO" >> $BASH_ENV
-      - run:
-          name: Instalar Burp Suite
-          command: |
-            cd app1
-            wget https://portswigger.net/burp/communitydownload -O burpsuite_community.jar
-            chmod +x burpsuite_community.jar
-      - run:
-          name: Executar Burp Suite
-          command: |
-            cd app1
-            java -jar burpsuite_community.jar --headless \
-              --project-file=burp-project.xml \
-              --url=http://$IP_PUBLICO:3000 \
-              --scan-definition=scan-definition.json \
-              --report-file=scan-results/burp-report.html
-      - store_artifacts:
-          path: scan-results/burp-report.html
+BurpScan-http-headers:
+  docker:
+    - image: $DOCKERHUB_USER/app1:latest  # Use a imagem que você construiu
+  steps:
+    - checkout
+    - aws-cli/install:
+        version: latest
+    - run:
+        name: Assumir Função IAM
+        command: |
+          aws-cli/assume_role_with_web_identity \
+            role-arn: $ROLE_ARN \
+            role-session-name: circleci-burp \
+            context: TesteDevSecOps
+    - run:
+        name: Configurar AWS CLI
+        command: |
+          aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
+          aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
+          aws configure set aws_session_token $AWS_SESSION_TOKEN
+          aws configure set default.region $AWS_DEFAULT_REGION
+    - run:
+        name: Obter IP da aplicação
+        command: |
+          IP_PUBLICO=$(aws ecs describe-services --cluster $MY_APP_PREFIX-cluster --services $MY_APP_PREFIX-service --query 'services[0].deployments[0].networkConfiguration.awsvpcConfiguration.subnets[0]' --output text)
+          echo "export IP_PUBLICO=$IP_PUBLICO" >> $BASH_ENV
+    - run:
+        name: Instalar Burp Suite
+        command: |
+          wget https://portswigger.net/burp/communitydownload -O burpsuite_community.jar
+          chmod +x burpsuite_community.jar
+    - run:
+        name: Executar Burp Suite
+        command: |
+          java -jar burpsuite_community.jar --headless \
+            --project-file=burp-project.xml \
+            --url=http://$IP_PUBLICO:3000 \
+            --scan-definition=scan-definition.json \
+            --report-file=scan-results/burp-report.html
+    - store_artifacts:
+        path: scan-results/burp-report.html
 
   BurpFix-http-headers: # Corrige os erros encontrados pelo BurpSuite
     docker:
