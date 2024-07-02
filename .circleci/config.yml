@@ -103,7 +103,7 @@ jobs:
           command: cd app2                   # Navega até o diretório do projeto app1
     snyk/scan:                  # Executa a análise SAST com Snyk - identifica vulnerabilidades no código-fonte
 
-    scan-app-sonarqube:                       # Job responsável por executar a análise estática com SonarQube
+  scan-app-sonarqube:                       # Job responsável por executar a análise estática com SonarQube
     docker:                                 
       - image: cimg/node:18.12.0             # Imagem Docker com a versão específica do Node.js
     steps:
