@@ -267,7 +267,7 @@ jobs:
           command: cp -r app1/* . 
       - github-cli/setup:
           token: GITHUB_TOKEN # Variável de ambiente com seu token do GitHub
-      - github-cli/release:
+      - github-cli/create-release:
           tag: v0.1.0 # Tag da release (opcional)
           title: "Deploy app1"
           notes: "Deploy automático via CircleCI"
@@ -347,3 +347,10 @@ workflows:
           context: TesteDevSecOps
           requires:
             - BurpFix-http-headers
+      - run:
+          name: Imprimir URL/IP da aplicação
+          command: |
+            # Obter IP público ou URL da aplicação implantada no ECS
+            echo "Aplicação disponível em: http://$IP_PUBLICO:3000"
+          requires:
+            - deploy
