@@ -103,44 +103,36 @@ jobs:
           command: cd app2                   # Navega até o diretório do projeto app1
     snyk/scan:                  # Executa a análise SAST com Snyk - identifica vulnerabilidades no código-fonte
 
-  scan-app-sonarqube:                       # Job responsável por executar a análise estática com SonarQube
-    docker:                                 
-      - image: cimg/node:18.12.0             # Imagem Docker com a versão específica do Node.js
-    steps:
-      - checkout #Checa as dependências
-      - run:
-          name: Listar arquivos
-          command: ls -la
-      - run:                                  # Passo para imprimir variáveis de ambiente
-          name: Imprimir variáveis de ambiente
-          command: |
-            echo "SONAR_PROJECT_KEY: $SONAR_PROJECT_KEY"
-            echo "SONAR_ORGANIZATION: $SONAR_ORGANIZATION"
-      - run:                                  # Passo para habilitar o modo verbose do SonarCloud
-          name: Habilitar Debug Logging SonarCloud
-          command: echo 'export SONAR_VERBOSE=true' >> $BASH_ENV
-      - sonarcloud/scan:                     # Executa a análise com SonarCloud
-          project_root: app1                   # Define o diretório raiz do projeto
+  scan-app-sonarqube:
+  # ...
+  steps:
+    - checkout
+    - run:
+        name: Definir branch principal
+        command: echo 'export SONAR_BRANCH=main' >> $BASH_ENV
+    - run:
+        name: Listar arquivos
+        command: ls -la
+    - run:                                  
+        name: Imprimir variáveis de ambiente
+        command: |
+          echo "SONAR_PROJECT_KEY: $SONAR_PROJECT_KEY"
+          echo "SONAR_ORGANIZATION: $SONAR_ORGANIZATION"
+    - run:                                 
+        name: Habilitar Debug Logging SonarCloud
+        command: echo 'export SONAR_VERBOSE=true' >> $BASH_ENV
+    - sonarcloud/scan:      
+        project_root: app1                   
 
   scan-docker-trivy:                        # Job responsável por executar a análise de segurança da imagem Docker com Trivy
     docker:
       - image: aquasec/trivy:latest          # Imagem com Trivy
     steps:
       - checkout
-      - setup_remote_docker: {}
-      - run:
-          name: Build da imagem
-          command: docker build -t $DOCKERHUB_USER/app1:latest .
-      - run:
-          name: Login no Docker Hub
-          command: echo $DOCKERHUB_PASSWORD | docker login -u $DOCKERHUB_USER --password-stdin
-      - run:
-          name: Push da Imagem
-          command: docker push $DOCKERHUB_USER/app1:latest
       - run:
           name: Executar Trivy
           command: |
-            trivy image $DOCKERHUB_USER/app1:latest > scan-results/trivy-report.txt # Executa o Trivy na imagem
+            trivy > scan-results/trivy-report.txt # Executa o Trivy na imagem
       - store_artifacts:                      # Armazena o relatório como artefato
           path: scan-results/trivy-report.txt 
 
