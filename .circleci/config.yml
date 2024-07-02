@@ -192,7 +192,7 @@ jobs:
 workflows:
   build-and-deploy:                          # Nome do workflow - descreve o fluxo de trabalho do pipeline
     jobs:                                     # Define os jobs que serão executados no workflow
-      - checkout:                             # Executa o job 'checkout' - obtém o código-fonte do repositório
+      - checkout                             # Executa o job 'checkout' - obtém o código-fonte do repositório
       - test:                                # Executa o job 'test' - executa os testes da aplicação
           context: TesteDevSecOps             
           requires:                             
