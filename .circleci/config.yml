@@ -160,7 +160,7 @@ jobs:
   
 
 
-  # --- Build & Deploy ---
+    # --- Build & Deploy ---
   build-and-push-image:
     docker:
       - image: cimg/base:stable                     
@@ -170,14 +170,14 @@ jobs:
           name: Build Docker image
           command: |
             cd app1
-            docker build -t mreaggle/app1:latest .
-            echo "export IMAGE_NAME=mreaggle/app1:latest" >> $BASH_ENV # Exportar o nome da imagem
+            docker build -t $DOCKERHUB_USER/app1:latest .
+            echo "export IMAGE_NAME=$DOCKERHUB_USER/app1:latest" >> $BASH_ENV # Exportar o nome da imagem
       - run:
           name: Log in to Docker Hub
           command: echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USER" --password-stdin
       - run:
           name: Push Docker image to Docker Hub
-          command: docker push mreaggle/app1:latest                
+          command: docker push $DOCKERHUB_USER/app1:latest                
 
   deploy:                                    
     docker:
@@ -186,7 +186,7 @@ jobs:
       - checkout
       - aws-cli/install:
           version: latest
-      - aws-cli/assume_role_with_web_identity:
+      - aws-cli/assume_role_with-web-identity:
           role-arn: $ROLE_ARN           # Passe a variável de ambiente aqui
           role-session-name: circleci-deploy 
       - run:
