@@ -133,7 +133,7 @@ jobs:
       - setup_remote_docker: {}
       - run:
           name: Build da imagem
-          command: docker build -t mreaggle/app1:latest
+          command: docker build -t mreaggle/app1:latest .
       - run:
           name: Executar Trivy
           command: |
