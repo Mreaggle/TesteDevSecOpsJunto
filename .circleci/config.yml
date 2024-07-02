@@ -111,8 +111,27 @@ jobs:
       - run:
           name:  Navegar até diretório 1
           command: cd app1
-      - sonarcloud/scan:                       # Executa a análise com SonarCloud - verifica a qualidade do código e identifica problemas de segurança
-          sonar_token_variable_name: SONAR_TOKEN # Define o nome da variável de ambiente que contém o token do SonarCloud
+      - sonarcloud/scan:                       # Executa a análise com SonarCloud - verifica a qualidade do código e identifica problemas de seguranç
+  
+  scan-docker-trivy:                        # Job responsável por executar a análise de segurança da imagem Docker com Trivy
+    docker:
+      - image: node:18.12.0-alpine          # Imagem base do app1
+    steps:
+      - setup_remote_docker
+      - checkout
+      - run:
+          name: Criar diretório scan-results
+          command: mkdir -p scan-results
+      - run:
+          name: Executar Trivy
+          command: |
+            cd app1                           # Acessa o diretório do Dockerfile
+            docker build -t $DOCKERHUB_USER/app1:latest . # Constrói a imagem Docker
+            echo $DOCKERHUB_PASSWORD | docker login -u $DOCKERHUB_USER --password-stdin
+            docker push $DOCKERHUB_USER/app1Trivy:latest 
+            docker run --rm aquasec/trivy image $DOCKERHUB_USER/app1Trivy:latest > scan-results/trivy-report.txt # Executa o Trivy na imagem
+      - store_artifacts:                      
+          path: scan-results/trivy-report.txt 
 
   scan-docker-anchore:                       # Job responsável por executar a análise de segurança da imagem Docker com Anchore Engine
     executor: anchore-engine/anchore_engine         # Define o executor como Anchore Engine - ambiente especializado para análise de imagens
@@ -131,25 +150,7 @@ jobs:
       - store_artifacts:                      # Armazena os relatórios como artefatos - disponibiliza os resultados da análise para posterior revisão
           path: anchore-reports               # Define o caminho para os relatórios
 
-  scan-docker-trivy:                        # Job responsável por executar a análise de segurança da imagem Docker com Trivy
-    docker:
-      - image: node:18.12.0-alpine          # Imagem base do app1
-    steps:
-      - setup_remote_docker
-      - checkout
-      - run:
-          name: Criar diretório scan-results
-          command: mkdir -p scan-results
-      - run:
-          name: Executar Trivy
-          command: |
-            cd app1                           # Acessa o diretório do Dockerfile
-            docker build -t "$DOCKERHUB_USER/app1:latest" . # Constrói a imagem Docker
-            echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USER" --password-stdin # Faz login no Docker Hub
-            docker push "$DOCKERHUB_USER/app1:latest" # Envia a imagem para o Docker Hub
-            docker run --rm aquasec/trivy image "$DOCKERHUB_USER/app1:latest" > scan-results/trivy-report.txt # Executa o Trivy na imagem
-      - store_artifacts:                      
-          path: scan-results/trivy-report.txt 
+  
 
 
   # --- Build & Deploy ---
@@ -215,16 +216,15 @@ workflows:
     #        - scan-git-trufflehog
     #        - scan-git-gitleaks
       - scan-app-sonarqube:                  # Executa o job 'scan-app-sonarqube' - realiza a análise estática de código com SonarQube
-          context: TesteDevSecOps
           requires:                             # Define que o job 'scan-app-sonarqube' depende do job 'checkout', 'test', 'scan-git-trufflehog' e 'scan-git-gitleaks' - garante que o código-fonte esteja disponível para a análise
             - checkout
     #        - test
     #        - scan-git-trufflehog
     #        - scan-git-gitleaks
-      - scan-docker-anchore:                  # Executa o job 'scan-docker-anchore' - realiza a análise de segurança da imagem Docker com Anchore Engine
-          context: TesteDevSecOps             # Define o contexto do CircleCI a ser utilizado
-          requires:                             # Define que o job 'scan-docker-anchore' depende do job 'checkout', 'test', 'scan-git-trufflehog' e 'scan-git-gitleaks' - garante que a imagem Docker esteja disponível para a análise
-            - checkout
+    #  - scan-docker-anchore:                  # Executa o job 'scan-docker-anchore' - realiza a análise de segurança da imagem Docker com Anchore Engine
+    #      context: TesteDevSecOps             # Define o contexto do CircleCI a ser utilizado
+    #      requires:                             # Define que o job 'scan-docker-anchore' depende do job 'checkout', 'test', 'scan-git-trufflehog' e 'scan-git-gitleaks' - garante que a imagem Docker esteja disponível para a análise
+    #        - checkout
     #        - test
     #        - scan-git-trufflehog
     #        - scan-git-gitleaks
