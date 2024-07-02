@@ -180,22 +180,16 @@ jobs:
           command: docker push $DOCKERHUB_USER/app1:latest                
 
   deploy:                                    
-    docker:
-      - image: cimg/python:3.10            
+        docker:
+      - image: cimg/python:3.10
+    context: TesteDevSecOps
     steps:
       - checkout
       - aws-cli/install:
           version: latest
-      - aws-cli/assume_role_with-web-identity:
-          role-arn: $ROLE_ARN           # Passe a variável de ambiente aqui
-          role-session-name: circleci-deploy 
-      - run:
-          name: Configurar AWS CLI
-          command: |
-            aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
-            aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
-            aws configure set aws_session_token $AWS_SESSION_TOKEN
-            aws configure set default.region $AWS_DEFAULT_REGION
+      - aws-cli/configure_oidc:
+          role-arn: $ROLE_ARN
+          aws-region: $AWS_DEFAULT_REGION
       - run:
           name: Atualizar Definição de Tarefa
           command: |
