@@ -127,6 +127,9 @@ jobs:
           name: Criar diretório de artefatos
           command: mkdir -p scan-results
       - run:
+          name: Entra no App1
+          command: cd app1    
+      - run:
           name: Build da imagem
           command: |
             ls -la #Lista diretório atual
