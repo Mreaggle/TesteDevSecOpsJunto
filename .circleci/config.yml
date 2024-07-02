@@ -122,8 +122,7 @@ jobs:
       - run:                                 
           name: Habilitar Debug Logging SonarCloud
           command: echo 'export SONAR_VERBOSE=true' >> $BASH_ENV
-      - sonarcloud/scan:                     # Executa a análise com SonarCloud
-          context: sonar-secrets             
+      - sonarcloud/scan:                     # Executa a análise com SonarCloud             
           project_root: app1                    
 
   scan-docker-trivy:                        # Job responsável por executar a análise de segurança da imagem Docker com Trivy
