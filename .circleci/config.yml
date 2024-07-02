@@ -253,21 +253,21 @@ jobs:
 
   # Subir "Hellow World!" no GitHub pages
   deploy-github-pages:
-  docker:
-    - image: cimg/base:stable
-  steps:
-    - checkout
-    - run:
-        name: Copiar app1 para o diretório raiz
-        command: cp -r app1/* . 
-    - github-cli/setup:
-        token: $GITHUB_TOKEN # Variável de ambiente com seu token do GitHub
-    - github-cli/release:
-        tag: v0.1.0 # Tag da release (opcional)
-        title: "Deploy app1"
-        notes: "Deploy automático via CircleCI"
-        files:
-          - "*"
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - checkout
+      - run:
+          name: Copiar app1 para o diretório raiz
+          command: cp -r app1/* . 
+      - github-cli/setup:
+          token: $GITHUB_TOKEN # Variável de ambiente com seu token do GitHub
+      - github-cli/release:
+          tag: v0.1.0 # Tag da release (opcional)
+          title: "Deploy app1"
+          notes: "Deploy automático via CircleCI"
+          files:
+            - "*"
 # Define o workflow do pipeline, que é uma sequência de jobs
 workflows:
   build-and-deploy:                          # Nome do workflow - descreve o fluxo de trabalho do pipeline
@@ -329,15 +329,15 @@ workflows:
           context: TesteDevSecOps
           requires:                             
             - build-and-push-image
-      - scan-http-headers:
+      - BurpScan-http-headers:
           context: TesteDevSecOps
           requires:
             - deploy
-      - fix-http-headers:
+      - BurpFix-http-headers:
           context: TesteDevSecOps
           requires:
-            - scan-http-headers
+            - BurpScan-http-headers
       - deploy-github-pages:
           context: TesteDevSecOps
           requires:
-            - fix-http-headers
+            - BurpFix-http-headers
