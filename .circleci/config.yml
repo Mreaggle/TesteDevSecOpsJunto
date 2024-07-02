@@ -7,8 +7,8 @@ orbs:
   sonarcloud: sonarsource/sonarcloud@2.0.0 # Orb para integrar com o SonarCloud - automatiza a análise de código estático
   snyk: snyk/snyk@2.1.0                 # Orb para integrar com o Snyk - automatiza a análise de vulnerabilidades de segurança
   anchore-engine: anchore/anchore-engine@1.9.0 # Orb para integrar com o Anchore Engine - automatiza a análise de segurança de imagens Docker
-
-# Define comandos personalizados para reutilização de código
+  github-cli: circleci/github-cli@2.3.0  # Orb para integrar com GitHub
+  # Define comandos personalizados para reutilização de código
 commands:
   build-and-push-image:
     description: Build and push Docker image to Docker Hub # Descrição do comando
@@ -161,98 +161,183 @@ jobs:
 
 
   # --- Build & Deploy ---
-  build-and-push-image:                     # Job responsável por construir e enviar a imagem Docker para o registro
-    docker:
-      - image: cimg/base:stable              # Imagem Docker básica do CircleCI - leve e eficiente
-    steps:
-      - checkout
-      - build-and-push-image                # Chama o comando personalizado - constrói e envia a imagem Docker
-
-  deploy:                                     # Job responsável por realizar o deploy da aplicação
-    docker:
-      - image: cimg/aws:2.8.11               # Imagem Docker com AWS CLI pré-instalada
+  build-and-push-image:                     
     steps:
       - checkout
       - run:
-          name: Configurar AWS CLI
+          name: Build Docker image
           command: |
-            aws configure set aws_access_key_id $AWS_ACCESS_KEY_ID
-            aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
-            aws configure set region $AWS_DEFAULT_REGION
+            cd app1
+            docker build -t mreaggle/app1:latest .
+            echo "export IMAGE_NAME=mreaggle/app1:latest" >> $BASH_ENV # Exportar o nome da imagem
+      - run:
+          name: Log in to Docker Hub
+          command: echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USER" --password-stdin
+      - run:
+          name: Push Docker image to Docker Hub
+          command: docker push mreaggle/app1:latest                
+
+  deploy:                                    
+    docker:
+      - image: cimg/python:3.10            
+    steps:
+      - checkout
+      - aws-cli/setup:
+          profile-name: default
+          role-arn: $ROLE_ARN
+      - run:
+          name: Atualizar Definição de Tarefa
+          command: |
+            aws ecs register-task-definition \
+              --family $MY_APP_PREFIX-task-definition \
+              --cli-input-json file://task-definition.json \
+              --output text \
+              --query 'taskDefinition.taskDefinitionArn' > task-definition-arn.txt
+      - run:
+          name: Obter Task Definition ARN
+          command: |
+            TASK_DEFINITION_ARN=$(cat task-definition-arn.txt)
+            echo "export TASK_DEFINITION_ARN=$TASK_DEFINITION_ARN" >> $BASH_ENV
       - run:
           name: Realizar Deploy no ECS
           command: |
             aws ecs update-service \
               --cluster $MY_APP_PREFIX-cluster \
               --service $MY_APP_PREFIX-service \
-              --task-definition $MY_APP_PREFIX-task-definition \
+              --task-definition $TASK_DEFINITION_ARN \
               --force-new-deployment
+  
 
+  # --- Rodar BurpSuite ---
+  BurpScan-http-headers: #Checa o Ambiente com BurpSuite Community Edition
+    docker:
+      - image: cimg/python:3.10 # Imagem com Python para executar o Burp Suite
+    steps:
+      - checkout
+      - aws-cli/setup:
+          profile-name: default
+      - run:
+          name: Obter IP da aplicação
+          command: |
+            IP_PUBLICO=$(aws ecs describe-services --cluster $MY_APP_PREFIX-cluster --services $MY_APP_PREFIX-service --query 'services[0].deployments[0].networkConfiguration.awsvpcConfiguration.subnets[0]' --output text)
+            echo "export IP_PUBLICO=$IP_PUBLICO" >> $BASH_ENV
+      - run:
+          name: Instalar Burp Suite
+          command: |
+            cd app1
+            wget https://portswigger.net/burp/communitydownload -O burpsuite_community.jar
+            chmod +x burpsuite_community.jar
+      - run:
+          name: Executar Burp Suite
+          command: |
+            cd app1
+            java -jar burpsuite_community.jar --headless \
+              --project-file=burp-project.xml \
+              --url=http://$IP_PUBLICO:3000 \
+              --scan-definition=scan-definition.json \
+              --report-file=scan-results/burp-report.html
+      - store_artifacts:
+          path: scan-results/burp-report.html
+
+  BurpFix-http-headers: # Corrige os erros encontrados pelo BurpSuite
+    docker:
+      - image: cimg/python:3.10  # Imagem com Python para executar o script
+    steps:
+      - checkout
+      - run:
+          name: Instalar BeautifulSoup4
+          command: pip install beautifulsoup4
+      - run:
+          name: Corrigir Headers
+          command: python fix-http-headers.py
+
+  # Subir "Hellow World!" no GitHub pages
+  deploy-github-pages:
+  docker:
+    - image: cimg/base:stable
+  steps:
+    - checkout
+    - run:
+        name: Copiar app1 para o diretório raiz
+        command: cp -r app1/* . 
+    - github-cli/setup:
+        token: $GITHUB_TOKEN # Variável de ambiente com seu token do GitHub
+    - github-cli/release:
+        tag: v0.1.0 # Tag da release (opcional)
+        title: "Deploy app1"
+        notes: "Deploy automático via CircleCI"
+        files:
+          - "*"
 # Define o workflow do pipeline, que é uma sequência de jobs
 workflows:
   build-and-deploy:                          # Nome do workflow - descreve o fluxo de trabalho do pipeline
     jobs:                                     # Define os jobs que serão executados no workflow
-      - checkout                             # Executa o job 'checkout' - obtém o código-fonte do repositório
-      - test:                                # Executa o job 'test' - executa os testes da aplicação
-          context: TesteDevSecOps             
-          requires:                             
+      # - checkout                             # Executa o job 'checkout' - obtém o código-fonte do repositório
+      # - test:                                # Executa o job 'test' - executa os testes da aplicação
+      #     context: TesteDevSecOps             
+      #     requires:                             
+      #       - checkout
+      # - scan-git-trufflehog:                 
+      #     context: TesteDevSecOps             
+      #     requires:                             
+      #       - checkout
+      #       - test
+      # - scan-git-gitleaks:                   
+      #     context: TesteDevSecOps             
+      #     requires:                             
+      #       - checkout
+      #       - test
+      # - scan-app1-snyk:                        
+      #     context: TesteDevSecOps             
+      #     requires:                             
+      #       - checkout
+      #       - test
+      #       - scan-git-trufflehog
+      #       - scan-git-gitleaks
+      # - scan-app2-snyk:                        
+      #     context: TesteDevSecOps             
+      #     requires:                             
+      #       - checkout
+      #       - test
+      #       - scan-git-trufflehog
+      #       - scan-git-gitleaks
+      # - scan-app-sonarqube:                  
+      #     context: TesteDevSecOps
+      #     requires:                             
+      #       - checkout
+      #       - test
+      #       - scan-git-trufflehog
+      #       - scan-git-gitleaks
+      # - scan-docker-anchore:                  
+      #     context: TesteDevSecOps            
+      #     requires:                             
+      #       - checkout
+      #       - test
+      #       - scan-git-trufflehog
+      #       - scan-git-gitleaks
+      # - scan-docker-trivy:                   
+      #     #context: TesteDevSecOps             
+      #     requires:                             
+      #       - checkout
+      #       - test
+      #       - scan-git-trufflehog
+      #       - scan-git-gitleaks
+      - build-and-push-image:                # Executa o job 'build-and-push-image' - constrói e envia a imagem Docker para o registro
+          requires:                             # Define que o job 'build-and-push-image' depende dos jobs de teste e segurança - garante que a aplicação seja testada e verificada antes do deploy
             - checkout
-      - scan-git-trufflehog:                 
-          context: TesteDevSecOps             
-          requires:                             
-            - checkout
-            - test
-      - scan-git-gitleaks:                   
-          context: TesteDevSecOps             
-          requires:                             
-            - checkout
-            - test
-      - scan-app1-snyk:                        
-          context: TesteDevSecOps             
-          requires:                             
-            - checkout
-            - test
-            - scan-git-trufflehog
-            - scan-git-gitleaks
-      - scan-app2-snyk:                        
-          context: TesteDevSecOps             
-          requires:                             
-            - checkout
-            - test
-            - scan-git-trufflehog
-            - scan-git-gitleaks
-      - scan-app-sonarqube:                  
-          context: TesteDevSecOps
-          requires:                             
-            - checkout
-            - test
-            - scan-git-trufflehog
-            - scan-git-gitleaks
-      - scan-docker-anchore:                  
-          context: TesteDevSecOps            
-          requires:                             
-            - checkout
-            - test
-            - scan-git-trufflehog
-            - scan-git-gitleaks
-      - scan-docker-trivy:                   
-          #context: TesteDevSecOps             
-          requires:                             
-            - checkout
-            - test
-            - scan-git-trufflehog
-            - scan-git-gitleaks
-      - build-and-push-image:                
-          requires:                             
-            - test
-            - scan-git-trufflehog
-            - scan-git-gitleaks
-            - scan-app1-snyk
-            - scan-app2-snyk
-            - scan-app-sonarqube
-            - scan-docker-anchore
-            - scan-docker-trivy
       - deploy:                                
           context: TesteDevSecOps
           requires:                             
             - build-and-push-image
+      - scan-http-headers:
+          context: TesteDevSecOps
+          requires:
+            - deploy
+      - fix-http-headers:
+          context: TesteDevSecOps
+          requires:
+            - scan-http-headers
+      - deploy-github-pages:
+          context: TesteDevSecOps
+          requires:
+            - fix-http-headers
