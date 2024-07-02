@@ -1,0 +1,11 @@
+{
+  "scan_configurations": [
+    {
+      "name": "Default Scan",
+      "enabled": true,
+      "urls": [
+        "http://$IP_PUBLICO:3000" 
+      ]
+    }
+  ]
+}
