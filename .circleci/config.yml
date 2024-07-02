@@ -111,14 +111,6 @@ jobs:
       - run:
           name: Definir branch principal
           command: echo 'export SONAR_BRANCH=main' >> $BASH_ENV
-      - run:
-          name: Listar arquivos
-          command: ls -la
-      - run:                                  # Passo para imprimir variáveis de ambiente
-          name: Imprimir variáveis de ambiente
-          command: |
-            echo "SONAR_PROJECT_KEY: $SONAR_PROJECT_KEY"
-            echo "SONAR_ORGANIZATION: $SONAR_ORGANIZATION"
       - run:                                 
           name: Habilitar Debug Logging SonarCloud
           command: echo 'export SONAR_VERBOSE=true' >> $BASH_ENV
