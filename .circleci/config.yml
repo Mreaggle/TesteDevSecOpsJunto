@@ -255,6 +255,12 @@ jobs:
       - run:
           name: Corrigir Headers
           command: python fix-http-headers.py
+  # Imprime Aplicação Hello World
+      - run:
+          name: Imprimir URL/IP da aplicação
+          command: |
+            # Obter IP público ou URL da aplicação implantada no ECS
+            echo "Aplicação disponível em: http://$IP_PUBLICO:3000"
 
 # Define o workflow do pipeline, que é uma sequência de jobs
 workflows:
@@ -326,10 +332,3 @@ workflows:
           context: TesteDevSecOps
           requires:
             - BurpScan-http-headers
-      - run:
-          name: Imprimir URL/IP da aplicação
-          command: |
-            # Obter IP público ou URL da aplicação implantada no ECS
-            echo "Aplicação disponível em: http://$IP_PUBLICO:3000"
-          requires:
-            - deploy
