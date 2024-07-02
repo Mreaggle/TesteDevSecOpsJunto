@@ -103,7 +103,7 @@ jobs:
           command: cd app2                   # Navega até o diretório do projeto app1
     snyk/scan:                  # Executa a análise SAST com Snyk - identifica vulnerabilidades no código-fonte
 
-  scan-app-sonarqube:                       # Job responsável por executar a análise estática com SonarQube
+    scan-app-sonarqube:                       # Job responsável por executar a análise estática com SonarQube
     docker:                                 
       - image: cimg/node:18.12.0             # Imagem Docker com a versão específica do Node.js
     steps:
@@ -111,12 +111,7 @@ jobs:
       - run:
           name: Acessar diretório app1
           command: cd app1                   # Navega até o diretório do projeto app1
-      - run:
-          name: Configurar variáveis de ambiente do SonarCloud
-          command: |
-            echo 'export SONAR_PROJECT_KEY=$SONAR_PROJECT_KEY' >> $BASH_ENV
-            echo 'export SONAR_ORGANIZATION=$SONAR_ORGANIZATION' >> $BASH_ENV
-      - sonarcloud/scan:                      # Executa a análise com SonarCloud - verifica a qualidade do código e identifica problemas de segurança
+      - sonarcloud/scan:                       # Executa a análise com SonarCloud - verifica a qualidade do código e identifica problemas de segurança
           project_root: app1
           sonar_token_variable_name: SONAR_TOKEN # Define o nome da variável de ambiente que contém o token do SonarCloud
 
@@ -129,7 +124,7 @@ jobs:
           name: Build da imagem Docker
           command: docker build -t "$DOCKERHUB_USER/app1:latest" . # Constrói a imagem Docker - cria a imagem para análise
       - anchore-engine/analyze_local_image:          # Analisa a imagem Docker localmente com Anchore Engine - identifica vulnerabilidades e verifica conformidade com políticas
-          image_name: $DOCKERHUB_USER/app1:latest # Define o nome da imagem a ser analisada
+          image_name: app1:latest # Define o nome da imagem a ser analisada
           timeout: '500'                     # Define o tempo limite para a análise - previne execuções longas
       - anchore-engine/parse_reports                 # Analisa os relatórios gerados pelo Anchore Engine - extrai informações relevantes
       - store_artifacts:                      # Armazena os relatórios como artefatos - disponibiliza os resultados da análise para posterior revisão
@@ -219,7 +214,6 @@ workflows:
             - scan-git-trufflehog
             - scan-git-gitleaks
       - scan-app-sonarqube:                  # Executa o job 'scan-app-sonarqube' - realiza a análise estática de código com SonarQube
-          context: TesteDevSecOps             # Define o contexto do CircleCI a ser utilizado
           requires:                             # Define que o job 'scan-app-sonarqube' depende do job 'checkout', 'test', 'scan-git-trufflehog' e 'scan-git-gitleaks' - garante que o código-fonte esteja disponível para a análise
             - checkout
             - test
