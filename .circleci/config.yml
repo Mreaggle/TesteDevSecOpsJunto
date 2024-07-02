@@ -133,14 +133,14 @@ jobs:
     docker:
       - image: node:18.12.0-alpine          # Imagem base do app1
     steps:
+      - setup_remote_docker
       - checkout
       - run:
           name: Criar diretório scan-results
           command: mkdir -p scan-results
       - run:
           name: Executar Trivy
-          command: |
-            setup_remote_docker               # Configura o Docker dentro do container
+          command: |            
             docker build -t "$DOCKERHUB_USER/app1:latest" . #Sobe nova imagem
             docker pull aquasec/trivy:latest  # Faz o pull da imagem do Trivy - garante que a versão mais recente seja utilizada
             docker run --rm aquasec/trivy:latest image $DOCKERHUB_USER/app1:latest > scan-results/trivy-report.txt # Executa a análise com Trivy e salva o relatório em um arquivo - usa variável de ambiente para o nome da imagem
@@ -211,6 +211,7 @@ workflows:
             - scan-git-trufflehog
             - scan-git-gitleaks
       - scan-app-sonarqube:                  # Executa o job 'scan-app-sonarqube' - realiza a análise estática de código com SonarQube
+          context: TesteDevSecOps
           requires:                             # Define que o job 'scan-app-sonarqube' depende do job 'checkout', 'test', 'scan-git-trufflehog' e 'scan-git-gitleaks' - garante que o código-fonte esteja disponível para a análise
             - checkout
             - test
