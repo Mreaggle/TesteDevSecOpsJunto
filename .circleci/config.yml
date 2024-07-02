@@ -187,7 +187,7 @@ jobs:
       - aws-cli/install:
           version: latest
       - aws-cli/assume_role_with_web_identity:
-          role-arn: $ROLE_ARN           
+          role-arn: $ROLE_ARN           # Passe a variável de ambiente aqui
           role-session-name: circleci-deploy 
       - run:
           name: Configurar AWS CLI
