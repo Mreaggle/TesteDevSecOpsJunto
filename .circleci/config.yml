@@ -111,7 +111,7 @@ jobs:
       - run:
           name:  Navegar até diretório 1
           command: cd app1
-      - sonarcloud/scan:                       # Executa a análise com SonarCloud - verifica a qualidade do código e identifica problemas de seguranç
+      - sonarcloud/scan                       # Executa a análise com SonarCloud - verifica a qualidade do código e identifica problemas de seguranç
   
   scan-docker-trivy:                        # Job responsável por executar a análise de segurança da imagem Docker com Trivy
     docker:
