@@ -334,6 +334,7 @@ workflows:
       #       - scan-git-trufflehog
       #       - scan-git-gitleaks
       - build-and-push-image:                # Executa o job 'build-and-push-image' - constrói e envia a imagem Docker para o registro
+          context: TesteDevSecOps
           requires:                             # Define que o job 'build-and-push-image' depende dos jobs de teste e segurança - garante que a aplicação seja testada e verificada antes do deploy
             - checkout
       - deploy:                                
