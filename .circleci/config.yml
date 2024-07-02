@@ -181,8 +181,7 @@ jobs:
 
   deploy:                                    
     docker:
-      - image: cimg/python:3.10            
-    context: TesteDevSecOps                
+      - image: cimg/python:3.10                         
     steps:
       - checkout
       - aws-cli/install:
