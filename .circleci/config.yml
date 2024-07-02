@@ -108,9 +108,6 @@ jobs:
       - image: cimg/node:18.12.0             # Imagem Docker com a versão específica do Node.js
     steps:
       - checkout
-      - run:
-          name: Acessar diretório app1
-          command: cd app1                   # Navega até o diretório do projeto app1
       - sonarcloud/scan:                       # Executa a análise com SonarCloud - verifica a qualidade do código e identifica problemas de segurança
           project_root: app1
           sonar_token_variable_name: SONAR_TOKEN # Define o nome da variável de ambiente que contém o token do SonarCloud
@@ -122,9 +119,11 @@ jobs:
       - checkout
       - run:
           name: Build da imagem Docker
-          command: docker build -t "$DOCKERHUB_USER/app1:latest" . # Constrói a imagem Docker - cria a imagem para análise
+          command: |
+            cd app1                           # Acessa o diretório do Dockerfile
+            docker build -t "testdevsecopsjunto:latest" . # Constrói a imagem Docker - cria a imagem para análise
       - anchore-engine/analyze_local_image:          # Analisa a imagem Docker localmente com Anchore Engine - identifica vulnerabilidades e verifica conformidade com políticas
-          image_name: app1:latest # Define o nome da imagem a ser analisada
+          image_name: testdevsecopsjunto:latest # Define o nome da imagem a ser analisada
           timeout: '500'                     # Define o tempo limite para a análise - previne execuções longas
       - anchore-engine/parse_reports                 # Analisa os relatórios gerados pelo Anchore Engine - extrai informações relevantes
       - store_artifacts:                      # Armazena os relatórios como artefatos - disponibiliza os resultados da análise para posterior revisão
@@ -135,21 +134,19 @@ jobs:
       - image: node:18.12.0-alpine          # Imagem base do app1
     steps:
       - checkout
-      - setup_remote_docker
-      - run:
-          name: Navega até app1
-          command: cd app1
       - run:
           name: Criar diretório scan-results
           command: mkdir -p scan-results
       - run:
           name: Executar Trivy
           command: |
+            setup_remote_docker               # Configura o Docker dentro do container
             docker build -t "$DOCKERHUB_USER/app1:latest" . #Sobe nova imagem
             docker pull aquasec/trivy:latest  # Faz o pull da imagem do Trivy - garante que a versão mais recente seja utilizada
             docker run --rm aquasec/trivy:latest image $DOCKERHUB_USER/app1:latest > scan-results/trivy-report.txt # Executa a análise com Trivy e salva o relatório em um arquivo - usa variável de ambiente para o nome da imagem
       - store_artifacts:                      
           path: scan-results/trivy-report.txt 
+
 
   # --- Build & Deploy ---
   build-and-push-image:                     # Job responsável por construir e enviar a imagem Docker para o registro
