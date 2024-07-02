@@ -128,13 +128,14 @@ jobs:
           command: mkdir -p scan-results
       - run:
           name: Build da imagem
-          command: ls -la
-                   if [ -d "app1" ]; then
-                     cd app1 && docker build -t ${DOCKERHUB_USER}/app1:latest .
-                   else
-                     echo "Erro: Diretório app1 não encontrado!"
-                     exit 1
-                   fi
+          command: |
+            ls -la #Lista diretório atual
+            if [ -d "app1" ]; then
+              cd app1 && docker build -t ${DOCKERHUB_USER}/app1:latest .
+            else
+                echo"Erro: Diretório app1 não encontrado!"
+                exit 1
+            fi
       - run:
           name: Executar Trivy
           command: |
