@@ -256,23 +256,6 @@ jobs:
           name: Corrigir Headers
           command: python fix-http-headers.py
 
-  # Subir "Hello World!" no GitHub pages
-  deploy-github-pages:
-    docker:
-      - image: cimg/base:stable
-    steps:
-      - checkout
-      - run:
-          name: Copiar app1 para o diretório raiz
-          command: cp -r app1/* . 
-      - github-cli/setup:
-          token: GITHUB_TOKEN # Variável de ambiente com seu token do GitHub
-      - github-cli/create-release:
-          tag: v0.1.0 # Tag da release (opcional)
-          title: "Deploy app1"
-          notes: "Deploy automático via CircleCI"
-          files:
-            - "*"
 # Define o workflow do pipeline, que é uma sequência de jobs
 workflows:
   build-and-deploy:                          # Nome do workflow - descreve o fluxo de trabalho do pipeline
@@ -343,10 +326,6 @@ workflows:
           context: TesteDevSecOps
           requires:
             - BurpScan-http-headers
-      - deploy-github-pages:
-          context: TesteDevSecOps
-          requires:
-            - BurpFix-http-headers
       - run:
           name: Imprimir URL/IP da aplicação
           command: |
