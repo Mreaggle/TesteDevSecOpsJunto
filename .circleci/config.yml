@@ -132,12 +132,22 @@ jobs:
       - checkout
       - setup_remote_docker: {}
       - run:
+          name: Criar diretório de artefatos
+          command: mkdir -p scan-results
+      - run:
           name: Build da imagem
-          command: docker build -t mreaggle/app1:latest .
+          command: ls -la
+                   if [ -d "app1" ]; then
+                     cd app1 && docker build -t ${DOCKERHUB_USER}/app1:latest .
+                   else
+                     echo "Erro: Diretório app1 não encontrado!"
+                     exit 1
+                   fi
       - run:
           name: Executar Trivy
           command: |
-            trivy image mreaggle/app1:latest > scan-results/trivy-report.txt # Executa o Trivy na imagem
+            docker pull aquasec/trivy:latest
+            docker run --rm aquasec/trivy:latest image ${DOCKERHUB_USER}/app1:latest > scan-results/trivy-report.txt
       - store_artifacts:                      # Armazena o relatório como artefato
           path: scan-results/trivy-report.txt
 
@@ -238,7 +248,7 @@ workflows:
     #        - scan-git-trufflehog
     #        - scan-git-gitleaks
       - scan-docker-trivy:                   # Executa o job 'scan-docker-trivy' - realiza a análise de segurança da imagem Docker com Trivy
-          context: TesteDevSecOps             # Define o contexto do CircleCI a ser utilizado
+          #context: TesteDevSecOps             # Define o contexto do CircleCI a ser utilizado
           requires:                             # Define que o job 'scan-docker-trivy' depende do job 'checkout', 'test', 'scan-git-trufflehog' e 'scan-git-gitleaks' - garante que a imagem Docker esteja disponível para a análise
             - checkout
       #      - test
