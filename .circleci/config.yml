@@ -180,9 +180,8 @@ jobs:
           command: docker push $DOCKERHUB_USER/app1:latest                
 
   deploy:                                    
-        docker:
+    docker:
       - image: cimg/python:3.10
-    context: TesteDevSecOps
     steps:
       - checkout
       - aws-cli/install:
