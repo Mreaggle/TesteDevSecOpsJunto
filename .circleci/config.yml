@@ -126,6 +126,7 @@ jobs:
           name: Executar Trivy
           command: |
             cd app1                           # Acessa o diretório do Dockerfile
+            ls -la app1
             docker build -t $DOCKERHUB_USER/app1:latest . # Constrói a imagem Docker
             echo $DOCKERHUB_PASSWORD | docker login -u $DOCKERHUB_USER --password-stdin
             docker push $DOCKERHUB_USER/app1Trivy:latest 
@@ -216,6 +217,7 @@ workflows:
     #        - scan-git-trufflehog
     #        - scan-git-gitleaks
       - scan-app-sonarqube:                  # Executa o job 'scan-app-sonarqube' - realiza a análise estática de código com SonarQube
+          context: TesteDevSecOps
           requires:                             # Define que o job 'scan-app-sonarqube' depende do job 'checkout', 'test', 'scan-git-trufflehog' e 'scan-git-gitleaks' - garante que o código-fonte esteja disponível para a análise
             - checkout
     #        - test
