@@ -181,14 +181,17 @@ jobs:
 
   deploy:                                    
     docker:
-      - image: cimg/python:3.10                         
+      - image: cimg/python:3.10            
     steps:
       - checkout
       - aws-cli/install:
           version: latest
-      - aws-cli/assume_role_with_web_identity:
-          role-arn: $ROLE_ARN           
-          role-session-name: circleci-deploy 
+      - run:
+          name: Assumir Função IAM
+          command: |
+            aws-cli/assume_role_with_web_identity \
+              role-arn: $ROLE_ARN \
+              role-session-name: circleci-deploy \
       - run:
           name: Configurar AWS CLI
           command: |
@@ -196,27 +199,6 @@ jobs:
             aws configure set aws_secret_access_key $AWS_SECRET_ACCESS_KEY
             aws configure set aws_session_token $AWS_SESSION_TOKEN
             aws configure set default.region $AWS_DEFAULT_REGION
-      - run:
-          name: Atualizar Definição de Tarefa
-          command: |
-            aws ecs register-task-definition \
-              --family $MY_APP_PREFIX-task-definition \
-              --cli-input-json file://task-definition.json \
-              --output text \
-              --query 'taskDefinition.taskDefinitionArn' > task-definition-arn.txt
-      - run:
-          name: Obter Task Definition ARN
-          command: |
-            TASK_DEFINITION_ARN=$(cat task-definition-arn.txt)
-            echo "export TASK_DEFINITION_ARN=$TASK_DEFINITION_ARN" >> $BASH_ENV
-      - run:
-          name: Realizar Deploy no ECS
-          command: |
-            aws ecs update-service \
-              --cluster $MY_APP_PREFIX-cluster \
-              --service $MY_APP_PREFIX-service \
-              --task-definition $TASK_DEFINITION_ARN \
-              --force-new-deployment
   
 
   # --- Rodar BurpSuite ---
@@ -353,4 +335,3 @@ workflows:
           context: TesteDevSecOps
           requires:
             - BurpFix-http-headers
-            
