@@ -162,7 +162,8 @@ jobs:
 
   # --- Build & Deploy ---
   build-and-push-image:
-    docker: cimg/base:stable                     
+    docker:
+      - image: cimg/base:stable                     
     steps:
       - checkout
       - run:
