@@ -185,8 +185,10 @@ jobs:
     steps:
       - checkout
       - aws-cli/setup:
-          profile-name: default
-          role-arn: $ROLE_ARN
+          auth:                               # Parâmetro 'auth' para autenticação
+            - assume-role-with-web-identity:  # Exemplo com OIDC
+                role-arn: $ROLE_ARN           # ARN da função IAM
+                role-session-name: circleci-deploy  # Nome da sessão
       - run:
           name: Atualizar Definição de Tarefa
           command: |
