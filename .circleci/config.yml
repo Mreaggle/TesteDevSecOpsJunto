@@ -107,8 +107,12 @@ jobs:
     docker:                                 
       - image: cimg/node:18.12.0             # Imagem Docker com a versão específica do Node.js
     steps:
-      - checkout
-      - sonarcloud/scan                       # Executa a análise com SonarCloud - verifica a qualidade do código e identifica problemas de seguranç
+      - checkout #Checa as dependências
+      - run:
+          name: Listar arquivos
+          command: ls -la
+      - sonarcloud/scan:
+          project_root: app1                   # Executa a análise com SonarCloud - verifica a qualidade do código e identifica problemas de seguranç
   
   scan-docker-trivy:                        # Job responsável por executar a análise de segurança da imagem Docker com Trivy
     docker:
@@ -123,12 +127,10 @@ jobs:
           name: Executar Trivy
           command: |
             cd app1                           # Acessa o diretório do Dockerfile
-            ls -la
             docker build -t $DOCKERHUB_USER/app1:latest . # Constrói a imagem Docker
             echo $DOCKERHUB_PASSWORD | docker login -u $DOCKERHUB_USER --password-stdin
-            docker push $DOCKERHUB_USER/app1Trivy:latest 
-            docker run --rm aquasec/trivy image $DOCKERHUB_USER/app1Trivy:latest > scan-results/trivy-report.txt # Executa o Trivy na imagem
-      - store_artifacts:                      
+            docker push $DOCKERHUB_USER/app1:latest 
+            docker run --rm aquasec/trivy image $DOCKERHUB_USER/app1:latest > scan-results/trivy-report.txt # Executa o Trivy na imagem
           path: scan-results/trivy-report.txt 
 
   scan-docker-anchore:                       # Job responsável por executar a análise de segurança da imagem Docker com Anchore Engine
