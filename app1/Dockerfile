@@ -1,5 +1,5 @@
 # Utiliza uma imagem Node.js 18.12.0 Alpine como base (segurança, tamanho reduzido, versão específica)
-FROM node:18.12.0-alpine
+FROM node:18.20.0-alpine
 
 # Declara variáveis de ambiente para o build
 ARG NODE_ENV=production
